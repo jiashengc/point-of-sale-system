@@ -1,0 +1,8 @@
+AG001;July biscuits;5.35;90
+BG001;Maximu Bun;3.50;20
+BG002;Lamli Burger;4.60;15
+CG001;TTT Candy;4.00;42
+CG002;Cappuccino;7.80;30
+CG003;Queenz Cakes;14.00;5
+DG001;Donkey Donuts;3.80;24
+DG002;French Fries;4.30;11
