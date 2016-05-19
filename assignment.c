@@ -45,15 +45,9 @@ int main(){
 			char buffer[50];
 			//Enter each item into array
 			fscanf(gst_file, "%5c;%[a-zA-Z ];%lf;%d\n", 
-				buffer, &gst[i].name, 
+				gst[i].code, gst[i].name, 
 				&gst[i].price, &gst[i].initialQuantity
 				);
-			//There's a wierd bug in program, reads excess chars into code
-			//Should not be possible
-			//Hard-coding solution as workaround
-			int j;
-			for(j=0; j < 5; j++)
-				gst[i].code[i] = buffer[i];
 			//No items have been sold yet, so set each itemsSold to 0
 			gst[i].itemsSold = 0;
 		}
@@ -161,10 +155,10 @@ void showInventory(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
 				);
 	}
 	puts("");
-	printf("Press enter to continue");
-	sleep(1);
+	printf("Enter anything to continue...  ");
 	char excess;
-	excess = getc(stdin);
+	scanf(" %c", &excess);
+	sleep(1);
 }
 
 void dailyTransactions(){
