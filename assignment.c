@@ -2,7 +2,7 @@
 /* ITS60304– Assignment #1 */
 /* C Programming */
 /* Student Name: <Chong Jia Sheng> <Kwan Juen Wen> */
-/* Student ID: <0326800> <your ID2> */
+/* Student ID: <0326800> <0322448> */
 /*-------------------------------------------------------------------*/
 
 #include <stdio.h>
