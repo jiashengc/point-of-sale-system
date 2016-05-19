@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------*/
 /* ITS60304– Assignment #1 */
 /* C Programming */
-/* Student Name: <your name 1> <your name 2> */
-/* Student ID: <your ID1> <your ID2> */
+/* Student Name: <Chong Jia Sheng> <Kwan Juen Wen> */
+/* Student ID: <0326800> <your ID2> */
 /*-------------------------------------------------------------------*/
 
 #include <stdio.h>
