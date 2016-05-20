@@ -13,8 +13,8 @@
 #define NGST_ITEMS 6
 
 struct Items {
-	char code[5];
-	char name[40];
+	char code[6];
+	char name[20];
 	double price;
 	int initialQuantity;
 	int itemsSold;
@@ -42,12 +42,12 @@ int main(){
 		//Read from gst_file
 		int i;
 		for(i = 0; i < GST_ITEMS; i++){
-			char buffer[50];
 			//Enter each item into array
 			fscanf(gst_file, "%5c;%[a-zA-Z ];%lf;%d\n", 
 				gst[i].code, gst[i].name, 
 				&gst[i].price, &gst[i].initialQuantity
 				);
+			gst[i].code[5] = '\0';
 			//No items have been sold yet, so set each itemsSold to 0
 			gst[i].itemsSold = 0;
 		}
@@ -58,6 +58,7 @@ int main(){
 				ngst[i].code, ngst[i].name, 
 				&ngst[i].price, &ngst[i].initialQuantity
 				);
+			ngst[i].code[5] = '\0';
 			//No items have been sold yet, so set each itemsSold to 0
 			ngst[i].itemsSold = 0;
 		}
@@ -66,7 +67,7 @@ int main(){
 			printOptions();
 			printf("Choice: ");
 			scanf(" %c", &choice);
-			sleep(1); //Pause for 1 second
+			//sleep(1); //Pause for 1 second
 			if(!((choice == '2') || (choice == '3') || (choice == '4')))
 				system("clear"); //Clear screen(Only works on Linux/Unix)
 			printf("\n\n");
@@ -82,7 +83,7 @@ int main(){
 					puts("Invalid option entered. Please try again.");
 					break;
 			}
-			sleep(2);
+			//sleep(2);
 			system("clear"); //Clear screen(Only works on Linux/Unix)
 		}while(choice != '7');
 	}
@@ -139,30 +140,33 @@ void showInventory(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
 	char excess;
 	int i;
 	//Print Taxable items
-	puts("Taxable items:");
+	printf("Taxable items:\n\n");
+	printf("%s\t%-20s\t%-6s\t%-6s\n", 
+		"Code", "Name", "Price", "Quantity");
+	puts("-------------------------------------------------");
 	for(i = 0; i < GST_ITEMS; i++){
 		if(gst[i].initialQuantity > 0)
-			printf("%c%c%c%c%c %s %.2f %d\n", 
-				gst[i].code[0], gst[i].code[1], gst[i].code[2], gst[i].code[3], gst[i].code[4], 
-				gst[i].name, 
-				gst[i].price, gst[i].initialQuantity
+			printf("%s\t%-20s\t%.2f\t%d\n", 
+				gst[i].code, gst[i].name, 
+				gst[i].price, gst[i].initialQuantity - gst[i].itemsSold
 				);
 	}
 	puts("");
 	//Print Non-taxable items
-	puts("Non-taxable items:");
+	printf("Non-taxable items:\n\n");
+	printf("%s\t%-20s\t%-6s\t%-6s\n", 
+		"Code", "Name", "Price", "Quantity");
+	puts("-------------------------------------------------");
 	for(i = 0; i < NGST_ITEMS; i++){
 		if(ngst[i].initialQuantity > 0)
-			printf("%c%c%c%c%c %s %.2f %d\n", 
-				ngst[i].code[0], ngst[i].code[1], ngst[i].code[2], ngst[i].code[3], ngst[i].code[4], 
-				ngst[i].name, 
-				ngst[i].price, ngst[i].initialQuantity
+			printf("%s\t%-20s\t%.2f\t%d\n", 
+				ngst[i].code, ngst[i].name, 
+				ngst[i].price, ngst[i].initialQuantity - gst[i].itemsSold
 				);
 	}
 	puts("");
 	printf("Enter anything to continue...  ");
 	scanf(" %c", &excess);
-	sleep(1);
 }
 
 void dailyTransactions(){
