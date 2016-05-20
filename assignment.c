@@ -70,7 +70,6 @@ int main(){
 			//sleep(1); //Pause for 1 second
 			if(!((choice == '2') || (choice == '3') || (choice == '4')))
 				system("clear"); //Clear screen(Only works on Linux/Unix)
-			printf("\n\n");
 			switch(choice){
 				case '1':	purchaseItems(gst, ngst);		break;
 				case '2':	editItems();					break;
@@ -145,27 +144,24 @@ void showInventory(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
 		"Code", "Name", "Price", "Quantity");
 	puts("-------------------------------------------------");
 	for(i = 0; i < GST_ITEMS; i++){
-		if(gst[i].initialQuantity > 0)
-			printf("%s\t%-20s\t%.2f\t%d\n", 
-				gst[i].code, gst[i].name, 
-				gst[i].price, gst[i].initialQuantity - gst[i].itemsSold
-				);
+		int remaining = gst[i].initialQuantity - gst[i].itemsSold;
+		printf("%s\t%-20s\t%5.2f\t%d\n", 
+			gst[i].code, gst[i].name, gst[i].price, remaining
+			);
 	}
-	puts("");
+	printf("\n\n");
 	//Print Non-taxable items
 	printf("Non-taxable items:\n\n");
 	printf("%s\t%-20s\t%-6s\t%-6s\n", 
 		"Code", "Name", "Price", "Quantity");
 	puts("-------------------------------------------------");
 	for(i = 0; i < NGST_ITEMS; i++){
-		if(ngst[i].initialQuantity > 0)
-			printf("%s\t%-20s\t%.2f\t%d\n", 
-				ngst[i].code, ngst[i].name, 
-				ngst[i].price, ngst[i].initialQuantity - gst[i].itemsSold
-				);
+		int remaining = gst[i].initialQuantity - gst[i].itemsSold;
+		printf("%s\t%-20s\t%5.2f\t%d\n", 
+			ngst[i].code, ngst[i].name, ngst[i].price, remaining
+			);
 	}
-	puts("");
-	printf("Enter anything to continue...  ");
+	printf("\nEnter a character to continue...  ");
 	scanf(" %c", &excess);
 }
 
