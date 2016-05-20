@@ -67,7 +67,9 @@ int main(){
 			printf("Choice: ");
 			scanf(" %c", &choice);
 			sleep(1); //Pause for 1 second
-			system("clear"); //Clear screen(Only works on Linux/Unix)
+			if(!((choice == '2') || (choice == '3') || (choice == '4')))
+				system("clear"); //Clear screen(Only works on Linux/Unix)
+			printf("\n\n");
 			switch(choice){
 				case '1':	purchaseItems(gst, ngst);		break;
 				case '2':	editItems();					break;
@@ -78,9 +80,9 @@ int main(){
 				case '7':	puts("Goodbye.");	sleep(1);	break;
 				default: 
 					puts("Invalid option entered. Please try again.");
-					sleep(1);
 					break;
 			}
+			sleep(2);
 			system("clear"); //Clear screen(Only works on Linux/Unix)
 		}while(choice != '7');
 	}
@@ -115,7 +117,7 @@ void purchaseItems(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
 	char itemCode[5];
 	int quantity;
 	printf("Enter (Item code, Quantity), no brackets: ");
-	scanf(" %5c, %d", itemCode, &quantity);
+	scanf(" %s, %d", itemCode, &quantity);
 	//Next line is for debugging purposes
 	//printf("You entered: %s, %d\n", itemCode, quantity);
 	
@@ -134,13 +136,15 @@ void deleteItems(){
 }
 
 void showInventory(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
+	char excess;
 	int i;
 	//Print Taxable items
 	puts("Taxable items:");
 	for(i = 0; i < GST_ITEMS; i++){
 		if(gst[i].initialQuantity > 0)
-			printf("%s %s %.2f %d\n", 
-				gst[i].code, gst[i].name, 
+			printf("%c%c%c%c%c %s %.2f %d\n", 
+				gst[i].code[0], gst[i].code[1], gst[i].code[2], gst[i].code[3], gst[i].code[4], 
+				gst[i].name, 
 				gst[i].price, gst[i].initialQuantity
 				);
 	}
@@ -149,14 +153,14 @@ void showInventory(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
 	puts("Non-taxable items:");
 	for(i = 0; i < NGST_ITEMS; i++){
 		if(ngst[i].initialQuantity > 0)
-			printf("%s %s %.2f %d\n", 
-				ngst[i].code, ngst[i].name, 
+			printf("%c%c%c%c%c %s %.2f %d\n", 
+				ngst[i].code[0], ngst[i].code[1], ngst[i].code[2], ngst[i].code[3], ngst[i].code[4], 
+				ngst[i].name, 
 				ngst[i].price, ngst[i].initialQuantity
 				);
 	}
 	puts("");
 	printf("Enter anything to continue...  ");
-	char excess;
 	scanf(" %c", &excess);
 	sleep(1);
 }
