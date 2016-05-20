@@ -13,8 +13,8 @@
 #define NGST_ITEMS 6
 
 struct Items {
-	char code[5];
-	char name[40];
+	char code[6];
+	char name[20];
 	double price;
 	int initialQuantity;
 	int itemsSold;
@@ -42,18 +42,12 @@ int main(){
 		//Read from gst_file
 		int i;
 		for(i = 0; i < GST_ITEMS; i++){
-			char buffer[50];
 			//Enter each item into array
 			fscanf(gst_file, "%5c;%[a-zA-Z ];%lf;%d\n", 
-				buffer, &gst[i].name, 
+				gst[i].code, gst[i].name, 
 				&gst[i].price, &gst[i].initialQuantity
 				);
-			//There's a wierd bug in program, reads excess chars into code
-			//Should not be possible
-			//Hard-coding solution as workaround
-			int j;
-			for(j=0; j < 5; j++)
-				gst[i].code[i] = buffer[i];
+			gst[i].code[5] = '\0';
 			//No items have been sold yet, so set each itemsSold to 0
 			gst[i].itemsSold = 0;
 		}
@@ -64,6 +58,7 @@ int main(){
 				ngst[i].code, ngst[i].name, 
 				&ngst[i].price, &ngst[i].initialQuantity
 				);
+			ngst[i].code[5] = '\0';
 			//No items have been sold yet, so set each itemsSold to 0
 			ngst[i].itemsSold = 0;
 		}
@@ -72,8 +67,10 @@ int main(){
 			printOptions();
 			printf("Choice: ");
 			scanf(" %c", &choice);
-			sleep(1); //Pause for 1 second
-			system("clear"); //Clear screen(Only works on Linux/Unix)
+			//sleep(1); //Pause for 1 second
+			if(!((choice == '2') || (choice == '3') || (choice == '4')))
+				system("clear"); //Clear screen(Only works on Linux/Unix)
+			printf("\n\n");
 			switch(choice){
 				case '1':	purchaseItems(gst, ngst);		break;
 				case '2':	editItems();					break;
@@ -84,9 +81,9 @@ int main(){
 				case '7':	puts("Goodbye.");	sleep(1);	break;
 				default: 
 					puts("Invalid option entered. Please try again.");
-					sleep(1);
 					break;
 			}
+			//sleep(2);
 			system("clear"); //Clear screen(Only works on Linux/Unix)
 		}while(choice != '7');
 	}
@@ -121,7 +118,7 @@ void purchaseItems(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
 	char itemCode[5];
 	int quantity;
 	printf("Enter (Item code, Quantity), no brackets: ");
-	scanf(" %5c, %d", itemCode, &quantity);
+	scanf(" %s, %d", itemCode, &quantity);
 	//Next line is for debugging purposes
 	//printf("You entered: %s, %d\n", itemCode, quantity);
 	
@@ -140,31 +137,36 @@ void deleteItems(){
 }
 
 void showInventory(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
+	char excess;
 	int i;
 	//Print Taxable items
-	puts("Taxable items:");
+	printf("Taxable items:\n\n");
+	printf("%s\t%-20s\t%-6s\t%-6s\n", 
+		"Code", "Name", "Price", "Quantity");
+	puts("-------------------------------------------------");
 	for(i = 0; i < GST_ITEMS; i++){
 		if(gst[i].initialQuantity > 0)
-			printf("%s %s %.2f %d\n", 
+			printf("%s\t%-20s\t%.2f\t%d\n", 
 				gst[i].code, gst[i].name, 
-				gst[i].price, gst[i].initialQuantity
+				gst[i].price, gst[i].initialQuantity - gst[i].itemsSold
 				);
 	}
 	puts("");
 	//Print Non-taxable items
-	puts("Non-taxable items:");
+	printf("Non-taxable items:\n\n");
+	printf("%s\t%-20s\t%-6s\t%-6s\n", 
+		"Code", "Name", "Price", "Quantity");
+	puts("-------------------------------------------------");
 	for(i = 0; i < NGST_ITEMS; i++){
 		if(ngst[i].initialQuantity > 0)
-			printf("%s %s %.2f %d\n", 
+			printf("%s\t%-20s\t%.2f\t%d\n", 
 				ngst[i].code, ngst[i].name, 
-				ngst[i].price, ngst[i].initialQuantity
+				ngst[i].price, ngst[i].initialQuantity - gst[i].itemsSold
 				);
 	}
 	puts("");
-	printf("Press enter to continue");
-	sleep(1);
-	char excess;
-	excess = getc(stdin);
+	printf("Enter anything to continue...  ");
+	scanf(" %c", &excess);
 }
 
 void dailyTransactions(){
