@@ -6,6 +6,7 @@
 /*-------------------------------------------------------------------*/
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -21,12 +22,12 @@ struct Items {
 };
 
 void printOptions();
-void purchaseItems(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]);
+void purchaseItems(struct Items *gst, struct Items *ngst);
 void editItems();
 void addItems();
 void deleteItems();
-void showInventory(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]);
-void dailyTransactions();
+void showInventory(struct Items *gst, struct Items *ngst);
+void dailyTransactions(struct Items *gst, struct Items *ngst);
 
 int main(){
 	FILE *gst_file;
@@ -34,6 +35,8 @@ int main(){
 	struct Items gst[GST_ITEMS];
 	struct Items ngst[NGST_ITEMS];
 	char choice;
+	//Clear screen
+	system("clear");
 	//Open both files
 	gst_file = fopen("gst.txt", "r");
 	ngst_file = fopen("ngst.txt", "r");
@@ -113,11 +116,46 @@ void printOptions(){
 	puts("");
 }
 
-void purchaseItems(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
-	char itemCode[5];
+//This function checks whether the item is in gst, ngst, or neither
+//Returns 1 if it has gst, 0 if it does not
+//Returns -1 if neither
+int doesItemExist(struct Items *gst, struct Items *ngst, char *itemCode){
+	//All gst items have 'G' as 2nd character
+	//So, check if itemCode has it
+	if(itemCode[1] == 'G'){
+		int i;
+		for(i = 0; i < GST_ITEMS; i++)
+			if(strcmp(itemCode, gst[i].code) == 0)
+				return 1;
+	}
+	//All ngst items have 'N' as 2nd character
+	//So, check if itemCode has it instead
+	else if(itemCode[1] == 'N'){
+		int i;
+		for(i = 0; i < NGST_ITEMS; i++)
+			if(strcmp(itemCode, ngst[i].code) == 0)
+				return 0;
+	}
+	//If it does have 'G' or 'N', or exhausts both attempts
+	return -1;
+}
+
+void purchaseItems(struct Items *gst, struct Items *ngst){
+	char itemCode[6];
 	int quantity;
-	printf("Enter (Item code, Quantity), no brackets: ");
-	scanf(" %s, %d", itemCode, &quantity);
+	printf("Enter item code: ");
+	scanf(" %s", itemCode);
+	printf("Enter quantity:  ");
+	scanf(" %d", &quantity);
+	//Only use next line in debug
+	printf("You've entered %s\n", itemCode);
+	int itemCategory = doesItemExist(gst, ngst, itemCode);
+	if(itemCategory == -1){
+		printf("Invalid item. Please try again.\n");
+	}
+	else{
+		printf("This item is %d\n", itemCategory);
+	}
 	//Next line is for debugging purposes
 	//printf("You entered: %s, %d\n", itemCode, quantity);
 	
@@ -135,7 +173,7 @@ void deleteItems(){
 	puts("This option allows user to delete items");
 }
 
-void showInventory(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
+void showInventory(struct Items *gst, struct Items *ngst){
 	char excess;
 	int i;
 	//Print Taxable items
@@ -161,10 +199,32 @@ void showInventory(struct Items gst[GST_ITEMS], struct Items ngst[NGST_ITEMS]){
 			ngst[i].code, ngst[i].name, ngst[i].price, remaining
 			);
 	}
-	printf("\nEnter a character to continue...  ");
+	printf("\nEnter any character to continue...  ");
 	scanf(" %c", &excess);
 }
 
-void dailyTransactions(){
-	
+void dailyTransactions(struct Items *gst, struct Items *ngst){
+	int i; char excess;
+	int totalItemsSold;
+	double gstTotal, ngstTotal, gstCollected;
+	//Initalise all to 0
+	totalItemsSold = 0;
+	gstTotal = 0; ngstTotal = 0;
+	gstCollected = 0;
+	//Get total from gst
+	for(i = 0; i < GST_ITEMS; i++){
+		totalItemsSold += gst[i].itemsSold;
+		gstTotal += gst[i].price * gst[i].itemsSold;
+	}
+	//Get total from ngst
+	for(i = 0; i < NGST_ITEMS; i++){
+		totalItemsSold += ngst[i].itemsSold;
+		ngstTotal += ngst[i].price * ngst[i].itemsSold;
+	}
+	printf("Total transaction\t: %d\n", totalItemsSold);
+	printf("Sales with GST\t\t: RM %.2f\n", gstTotal);
+	printf("Sales without GST\t: RM %.2f\n", ngstTotal);
+	printf("GST collected\t\t: RM %.2f\n", gstCollected);
+	printf("\n\nEnter any character to continue...  ");
+	scanf(" %c", &excess);
 }
