@@ -42,15 +42,16 @@ int main(){
 	ngst_file = fopen("ngst.txt", "r");
 	//If opening files is successfull, proceed as normal
 	if((gst_file != NULL) && (ngst_file != NULL)){
-		//Read from gst_file
 		int i;
+		//Read from gst_file
 		for(i = 0; i < GST_ITEMS; i++){
 			//Enter each item into array
 			fscanf(gst_file, "%5c;%[a-zA-Z ];%lf;%d\n", 
 				gst[i].code, gst[i].name, 
 				&gst[i].price, &gst[i].initialQuantity
 				);
-			gst[i].code[5] = '\0';
+			//Null character terminator needed for string printing
+			gst[i].code[5] = '\0'; 
 			//No items have been sold yet, so set each itemsSold to 0
 			gst[i].itemsSold = 0;
 		}
@@ -61,6 +62,7 @@ int main(){
 				ngst[i].code, ngst[i].name, 
 				&ngst[i].price, &ngst[i].initialQuantity
 				);
+			//Null character terminator needed for string printing
 			ngst[i].code[5] = '\0';
 			//No items have been sold yet, so set each itemsSold to 0
 			ngst[i].itemsSold = 0;
@@ -71,7 +73,9 @@ int main(){
 			printf("Choice: ");
 			scanf(" %c", &choice);
 			//sleep(1); //Pause for 1 second
-			if(!((choice == '2') || (choice == '3') || (choice == '4')))
+			//Do not clear screen if choice is '2', '3', '4', or '7'
+			//Used strchr check as a shortcut
+			if(strchr("2347", choice) == NULL)
 				system("clear"); //Clear screen(Only works on Linux/Unix)
 			switch(choice){
 				case '1':	purchaseItems(gst, ngst);		break;
