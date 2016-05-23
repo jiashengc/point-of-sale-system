@@ -21,6 +21,7 @@ struct Items {
 	int itemsSold;
 };
 
+void clearScreen(){ system("clear");} //Clears screen(Only works on Linux/Unix)
 void printOptions();
 void purchaseItems(struct Items *gst, struct Items *ngst);
 void editItems();
@@ -30,13 +31,16 @@ void showInventory(struct Items *gst, struct Items *ngst);
 void dailyTransactions(struct Items *gst, struct Items *ngst);
 
 int main(){
-	FILE *gst_file;
-	FILE *ngst_file;
-	struct Items gst[GST_ITEMS];
-	struct Items ngst[NGST_ITEMS];
+	//File pointers here
+	FILE *gst_file, *ngst_file;
+	//Fixed arrays to store the items
+	//TODO: Change to dynamic arrays (Hard in C)
+	struct Items gst[GST_ITEMS], ngst[NGST_ITEMS];
+	//A variable to store the choices made
 	char choice;
-	//Clear screen
-	system("clear");
+	//--Execution starts from here--
+	//Clear screen for program
+	clearScreen();
 	//Open both files
 	gst_file = fopen("gst.txt", "r");
 	ngst_file = fopen("ngst.txt", "r");
@@ -76,7 +80,7 @@ int main(){
 			//Do not clear screen if choice is '2', '3', '4', or '7'
 			//Used strchr check as a shortcut
 			if(strchr("2347", choice) == NULL)
-				system("clear"); //Clear screen(Only works on Linux/Unix)
+				clearScreen(); 
 			switch(choice){
 				case '1':	purchaseItems(gst, ngst);		break;
 				case '2':	editItems();					break;
@@ -90,7 +94,7 @@ int main(){
 					break;
 			}
 			//sleep(2);
-			system("clear"); //Clear screen(Only works on Linux/Unix)
+			clearScreen();
 		}while(choice != '7');
 	}
 	//If opening files has an error,
@@ -140,7 +144,7 @@ int doesItemExist(struct Items *gst, struct Items *ngst, char *itemCode){
 			if(strcmp(itemCode, ngst[i].code) == 0)
 				return 0;
 	}
-	//If it does have 'G' or 'N', or exhausts both attempts
+	//If it doesn't have 'G' or 'N', or exhausts both attempts
 	return -1;
 }
 
