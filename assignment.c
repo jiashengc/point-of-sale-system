@@ -85,7 +85,7 @@ int main(){
 				clearScreen(); 
 			switch(choice){
 				case '1':	purchaseItems(gst, ngst);		break;
-				case '2':	editItem();					break;
+				case '2':	editItem();						break;
 				case '3':	addItem();						break;
 				case '4':	deleteItem();					break;
 				case '5':	showInventory(gst, ngst);		break;
@@ -218,8 +218,11 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 	puts("------------------------------------");
 	//Main purchasing loop
 	int quantity;
+	//Initial allocation
+	list = malloc(sizeof(struct Item));
 	do{
 		char codeBuffer[6];
+		quantity = 0;
 		printf("Purchase: ");
 		scanf(" %5c, %d", codeBuffer, &quantity);
 		codeBuffer[5] = '\0'; //assign last element as empty
@@ -237,11 +240,10 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 					codeBuffer
 					);
 				struct Item *selected = (isItemGst)? gst : ngst;
-				if(selected[position].initialQuantity <= selected[position].itemsSold + quantity){
+				if(selected[position].initialQuantity < selected[position].itemsSold + quantity){
 					printf("Not enough stock for purchase.Please try again\n");
 				}
 				else{
-					//Main problem found: Line below
 					struct Item *temp = realloc(list, (listSize + 1) * sizeof(struct Item));
 					//DO NOT continue operation if temp is null
 					//Means that there's not enough memory in system
@@ -252,8 +254,6 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 					}
 					//Proceed as normal if otherwise
 					else{
-						//Dump old list
-						free(list);
 						//Repoint list to new allocation
 						list = temp;
 						//Item has been found. Now load list with item found
@@ -264,8 +264,8 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 						subTotal += 
 							(list[listSize].price * quantity) * 
 							((isItemGst)? 1.06 : 1.00);
-						printf("This item is %s\n", list[listSize - 1].name);
-						printf("Subtotal: RM %.2f", subTotal);
+						printf("Item(s) bought: %dx %s\n", list[listSize].itemsSold, list[listSize].name);
+						printf("Subtotal      : RM %.2f\n\n", subTotal);
 						//Finished with item
 						//Increment listSize by 1 to match with total count
 						listSize += 1;
@@ -273,6 +273,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 				}
 			}
 		}
+		fflush(stdin);
 	}while(quantity > 0);
 	//Print th receipt if *list is not NULL and there are elements in list 
 	if(list != NULL && listSize != 0){
@@ -323,7 +324,7 @@ void showInventory(struct Item *gst, struct Item *ngst){
 		"Code", "Name", "Price", "Quantity");
 	puts("-------------------------------------------------");
 	for(i = 0; i < NGST_Items; i++){
-		int remaining = gst[i].initialQuantity - gst[i].itemsSold;
+		int remaining = ngst[i].initialQuantity - ngst[i].itemsSold;
 		printf("%s\t%-20s\t%5.2f\t%d\n", 
 			ngst[i].code, ngst[i].name, ngst[i].price, remaining
 			);
