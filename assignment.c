@@ -21,7 +21,7 @@ struct Item {
 	int itemsSold;
 };
 
-//Functions not listed here: doesItemExist(), and whereIsItem()
+//Functions not listed here: doesItemExist(), whereIsItem(), and printReceipt()
 //Functions not listed here are only to be used by other functions, not the main loop
 void clearScreen(){ system("clear");} //Clears screen(Only works on Linux/Unix)
 void printOptions();
@@ -175,26 +175,28 @@ void printReceipt(struct Item *list, int listLength){
 	totalSold = 0;
 	gstTotal = 0; ngstTotal = 0; 
 	gst = 0; total = 0;
+	printf("Receipt:\n\n");
 	for(i = 0; i < listLength; i++){
 		//Item code can only be 'G' or 'N'
+		//Has already been filtered during purchasing phase
 		int isItemGst = (list[i].code[1] == 'G');
 		if(isItemGst){
 			gstTotal += (list[i].price * list[i].itemsSold); 
 			gst += (list[i].price * list[i].itemsSold) * 6 / 100;
 		}
 		else{
-			ngstTotal += 
-				(list[i].price * list[i].itemsSold);
+			ngstTotal += (list[i].price * list[i].itemsSold);
 		}
 		totalSold += list[i].itemsSold;
 		printf("%2dx %-10s %5.2f %6.2f%s\n", 
 			list[i].itemsSold,	list[i].code,
-			list[i].price,	list[i].price * list[i].itemsSold,
+			list[i].price,	
+			list[i].price * list[i].itemsSold * (isItemGst ? 1.06 : 1.00),
 			(isItemGst)? "SR" : "ZR"
 		);
 		printf("   %-20s\n", list[i].name);
 	}
-	total = gstTotal + ngstTotal;
+	total = gstTotal + ngstTotal + gst;
 	printf("\n");
 	printf("Total sales including GST: RM %6.2f\n", total);
 	printf("Number of items sold: %d\n", totalSold);
@@ -204,6 +206,8 @@ void printReceipt(struct Item *list, int listLength){
 	printf("%-20s\t%6.2f\t%6.2f\n", "Total", total, gst);
 }
 
+//This function allows customers to purchase items
+//Prints a receipt after the customer is finished
 void purchaseItems(struct Item *gst, struct Item *ngst){
 	struct Item *list;
 	int listSize;
@@ -214,22 +218,25 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 	//Print instructions
 	puts("To purchase an item, enter it in this format:");
 	puts("(item code, quantity), no brackets");
-	printf("\nEnter -1 in quantity to exit.\n");
+	puts("Enter (EXIT0, -1) to exit.");
 	puts("------------------------------------");
 	//Main purchasing loop
+	char codeBuffer[6];
 	int quantity;
 	//Initial allocation
 	list = malloc(sizeof(struct Item));
 	do{
-		char codeBuffer[6];
+		//Zeroes codeBuffer
+		memset(&codeBuffer[0], 0, sizeof(codeBuffer));
 		quantity = 0;
 		printf("Purchase: ");
 		scanf(" %5c, %d", codeBuffer, &quantity);
-		codeBuffer[5] = '\0'; //assign last element as empty
+		//codeBuffer[5] = '\0'; //assign last element as empty
+		//Proceed if quantity is positive
 		if(quantity > 0){
 			int itemCategory = doesItemExist(gst, ngst, codeBuffer);
 			if(itemCategory == -1){
-				printf("Invalid item. Please try again.\n");
+				printf("Invalid item code. Please try again.\n\n");
 			}
 			else{
 				//Now we search for the item
@@ -241,7 +248,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 					);
 				struct Item *selected = (isItemGst)? gst : ngst;
 				if(selected[position].initialQuantity < selected[position].itemsSold + quantity){
-					printf("Not enough stock for purchase.Please try again\n");
+					printf("Not enough stock for purchase.Please try again\n\n");
 				}
 				else{
 					struct Item *temp = realloc(list, (listSize + 1) * sizeof(struct Item));
@@ -250,7 +257,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 					//Prompt user to close other programs before continuing
 					if(temp == NULL){
 						puts("Error: Not enough memory");
-						puts("Please close other programs before trying again.");
+						printf("Please close other programs before trying again.\n\n");
 					}
 					//Proceed as normal if otherwise
 					else{
@@ -273,14 +280,26 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 				}
 			}
 		}
+		//All quantities are negative now
+		//Check if the code entered is "EXIT0"
+		//If not, print this message
+		else if(strcmp(codeBuffer, "EXIT0") != 0){
+			printf("Invalid quantity. Please try again.\n");
+		}
+		//Prompt exit message if passed both
+		else{
+			printf("Purchase(s) completed. Exiting...\n\n");
+		}
+		//Flush stdin after each use
 		fflush(stdin);
-	}while(quantity > 0);
-	//Print th receipt if *list is not NULL and there are elements in list 
+	}while((strcmp(codeBuffer, "EXIT0") != 0) || (quantity > 0));
+	//Print the receipt if *list is not NULL and there are elements in list 
 	if(list != NULL && listSize != 0){
 		//Print the receipt
 		printReceipt(list, listSize);
 		//Transaction is done, we don't need list anymore
 		free(list);
+		sleep(4);
 	}
 	else{
 		printf("No items received. No receipt printed.\n");
@@ -347,6 +366,7 @@ void dailyTransactions(struct Item *gst, struct Item *ngst){
 		totalItemSold += gst[i].itemsSold;
 		gstTotal += gst[i].price * gst[i].itemsSold;
 	}
+	gstCollected += gstTotal * 0.06;
 	//Get total from ngst
 	for(i = 0; i < NGST_Items; i++){
 		totalItemSold += ngst[i].itemsSold;
