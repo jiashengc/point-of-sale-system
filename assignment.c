@@ -78,7 +78,7 @@ int main(){
 			printOptions();
 			printf("Choice: ");
 			scanf(" %c", &choice);
-			//sleep(1); //Pause for 1 second
+			sleep(1); //Pause for 1 second
 			//Do not clear screen if choice is '2', '3', '4', or '7'
 			//Used strchr check as a shortcut
 			if(strchr("2347", choice) == NULL)
@@ -95,7 +95,10 @@ int main(){
 					puts("Invalid option entered. Please try again.");
 					break;
 			}
-			//sleep(2);
+			//Pause for another 2 seconds if choice is '2', '3', '4', or '7'
+			if(strchr("2347", choice) != NULL)
+				sleep(2);
+			//Clear the screen
 			clearScreen();
 		}while(choice != '7');
 	}
@@ -105,7 +108,7 @@ int main(){
 		puts("Cannot open either gst.txt, or ngst.txt.");
 		puts("Please close all programs using either two files try again later.");
 	}
-	//Close files after reading
+	//Close files
 	fclose(gst_file);
 	fclose(ngst_file);
 	return 0;
@@ -175,11 +178,14 @@ void printReceipt(struct Item *list, int listLength){
 	totalSold = 0;
 	gstTotal = 0; ngstTotal = 0; 
 	gst = 0; total = 0;
+	//--Execution starts here--
 	printf("Receipt:\n\n");
 	for(i = 0; i < listLength; i++){
 		//Item code can only be 'G' or 'N'
 		//Has already been filtered during purchasing phase
+		//Store result in an int
 		int isItemGst = (list[i].code[1] == 'G');
+		//Add item to gstTotal or ngstTotal whether or not it has GST
 		if(isItemGst){
 			gstTotal += (list[i].price * list[i].itemsSold); 
 			gst += (list[i].price * list[i].itemsSold) * 6 / 100;
@@ -187,16 +193,21 @@ void printReceipt(struct Item *list, int listLength){
 		else{
 			ngstTotal += (list[i].price * list[i].itemsSold);
 		}
+		//Add quantity of items sold to totalSold
 		totalSold += list[i].itemsSold;
+		//Print out item's quantity, code, price, and subtotal to console
 		printf("%2dx %-10s %5.2f %6.2f%s\n", 
 			list[i].itemsSold,	list[i].code,
 			list[i].price,	
 			list[i].price * list[i].itemsSold * (isItemGst ? 1.06 : 1.00),
 			(isItemGst)? "SR" : "ZR"
 		);
+		//Print out item's name
 		printf("   %-20s\n", list[i].name);
 	}
+	//Get the total of the purchase(s)
 	total = gstTotal + ngstTotal + gst;
+	//Print out total, gstTotal, ngstTotal, and gst to console
 	printf("\n");
 	printf("Total sales including GST: RM %6.2f\n", total);
 	printf("Number of items sold: %d\n", totalSold);
@@ -209,9 +220,9 @@ void printReceipt(struct Item *list, int listLength){
 //This function allows customers to purchase items
 //Prints a receipt after the customer is finished
 void purchaseItems(struct Item *gst, struct Item *ngst){
-	struct Item *list;
-	int listSize;
-	double subTotal;
+	struct Item *list;	int listSize;	double subTotal;
+	char excess;
+	//Set subtotal to 0
 	subTotal = 0;
 	//Start from beginning of array
 	listSize = 0;
@@ -225,32 +236,42 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 	int quantity;
 	//Initial allocation
 	list = malloc(sizeof(struct Item));
+	//do{}while() loop only exits when (EXIT0, -1) is entered
 	do{
-		//Zeroes codeBuffer
+		//Fill codeBuffer with zeroes
 		memset(&codeBuffer[0], 0, sizeof(codeBuffer));
 		quantity = 0;
 		printf("Purchase: ");
 		scanf(" %5c, %d", codeBuffer, &quantity);
-		//codeBuffer[5] = '\0'; //assign last element as empty
 		//Proceed if quantity is positive
 		if(quantity > 0){
+			//Check if item belongs to gst, ngst or neither
 			int itemCategory = doesItemExist(gst, ngst, codeBuffer);
+			//If it belongs to neither, print out error message and retry
 			if(itemCategory == -1){
 				printf("Invalid item code. Please try again.\n\n");
 			}
+			//If it belongs to either two, proceed as usual
 			else{
-				//Now we search for the item
+				//Now we search for the item in either lists
+				//Check if it in gst or ngst
 				int isItemGst = (itemCategory == 1);
+				//Find the item's position in either gst or ngst
 				int position = whereIsItem(
 					(isItemGst)? gst : ngst, 
 					(isItemGst)? GST_Items : NGST_Items,
 					codeBuffer
 					);
+				//Create pointer to point to the structure array for easier thinking
 				struct Item *selected = (isItemGst)? gst : ngst;
+				//Check if there's enough stock left
+				//If not, print out error message and retry
 				if(selected[position].initialQuantity < selected[position].itemsSold + quantity){
 					printf("Not enough stock for purchase.Please try again\n\n");
 				}
+				//Proceed as normal if there is enough to buy
 				else{
+					//Expand list's capacity
 					struct Item *temp = realloc(list, (listSize + 1) * sizeof(struct Item));
 					//DO NOT continue operation if temp is null
 					//Means that there's not enough memory in system
@@ -265,12 +286,15 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 						list = temp;
 						//Item has been found. Now load list with item found
 						list[listSize] = selected[position];
-						//Perform necessary assignments and math
+						//Write quantity sold to itemsSold
 						list[listSize].itemsSold = quantity;
+						//Increase items sold of it in the selected list
 						selected[position].itemsSold += quantity;
+						//Calculate new subtotal with additional item(s)
 						subTotal += 
 							(list[listSize].price * quantity) * 
 							((isItemGst)? 1.06 : 1.00);
+						//Print the item(s) bought and the new subtotal to console
 						printf("Item(s) bought: %dx %s\n", list[listSize].itemsSold, list[listSize].name);
 						printf("Subtotal      : RM %.2f\n\n", subTotal);
 						//Finished with item
@@ -299,11 +323,14 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 		printReceipt(list, listSize);
 		//Transaction is done, we don't need list anymore
 		free(list);
-		sleep(4);
 	}
+	//Do not print receipt otherwise
 	else{
 		printf("No items received. No receipt printed.\n");
 	}
+	//Prompt user to enter a character to continue
+	printf("\n\nEnter any character to continue...  ");
+	scanf(" %c", &excess);
 }
 
 //This function edits an item
@@ -363,19 +390,26 @@ void dailyTransactions(struct Item *gst, struct Item *ngst){
 	gstCollected = 0;
 	//Get total from gst
 	for(i = 0; i < GST_Items; i++){
+		//Increment total items sold
 		totalItemSold += gst[i].itemsSold;
+		//Calculate total sales made with GST items
 		gstTotal += gst[i].price * gst[i].itemsSold;
 	}
+	//Calculate GST collected
 	gstCollected += gstTotal * 0.06;
 	//Get total from ngst
 	for(i = 0; i < NGST_Items; i++){
+		//Increment total items sold
 		totalItemSold += ngst[i].itemsSold;
+		//Calculate total sales made with Non-GST items
 		ngstTotal += ngst[i].price * ngst[i].itemsSold;
 	}
+	//Print out results to console
 	printf("Total transaction\t: %d\n", totalItemSold);
 	printf("Sales with GST\t\t: RM %.2f\n", gstTotal);
 	printf("Sales without GST\t: RM %.2f\n", ngstTotal);
 	printf("GST collected\t\t: RM %.2f\n", gstCollected);
+	//Prompt user to enter a character to continue
 	printf("\n\nEnter any character to continue...  ");
 	scanf(" %c", &excess);
 }
