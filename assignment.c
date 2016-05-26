@@ -206,11 +206,11 @@ void printReceipt(struct Item *list, int listLength){
 		printf("   %-20s\n", list[i].name);
 	}
 	//Get the total of the purchase(s)
-	total = gstTotal + ngstTotal + gst;
+	total = gstTotal + ngstTotal;
 	//Print out total, gstTotal, ngstTotal, and gst to console
 	printf("\n");
-	printf("Total sales including GST: RM %6.2f\n", total);
-	printf("Number of items sold: %d\n", totalSold);
+	printf("Total sales including GST: RM %6.2f\n", total + gst);
+	printf("Number of items sold:         %6d\n\n", totalSold);
 	printf("%-20s\t%6s\t%6s\n", "GST Summary", "Amount", "Tax");
 	printf("%-20s\t%6.2f\t%6.2f\n", "SR @6%", gstTotal, gst);
 	printf("%-20s\t%6.2f\t%6.2f\n", "ZR @0%", ngstTotal, 0.00);
@@ -220,10 +220,11 @@ void printReceipt(struct Item *list, int listLength){
 //This function allows customers to purchase items
 //Prints a receipt after the customer is finished
 void purchaseItems(struct Item *gst, struct Item *ngst){
-	struct Item *list;	int listSize;	double subTotal;
+	struct Item *list;	int listSize;
+	double subTotal, gstTotal;
 	char excess;
-	//Set subtotal to 0
-	subTotal = 0;
+	//Set subtotal and gstTotal to 0
+	subTotal = 0;	gstTotal = 0;
 	//Start from beginning of array
 	listSize = 0;
 	//Print instructions
@@ -291,12 +292,11 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 						//Increase items sold of it in the selected list
 						selected[position].itemsSold += quantity;
 						//Calculate new subtotal with additional item(s)
-						subTotal += 
-							(list[listSize].price * quantity) * 
-							((isItemGst)? 1.06 : 1.00);
+						subTotal += (list[listSize].price * quantity) * ((isItemGst)? 1.06 : 1.00);
+						gstTotal += (list[listSize].price * quantity) * ((isItemGst)? 0.06 : 0);
 						//Print the item(s) bought and the new subtotal to console
 						printf("Item(s) bought: %dx %s\n", list[listSize].itemsSold, list[listSize].name);
-						printf("Subtotal      : RM %.2f\n\n", subTotal);
+						printf("Subtotal      : RM %.2f (RM %.2f)\n\n", subTotal, gstTotal);
 						//Finished with item
 						//Increment listSize by 1 to match with total count
 						listSize += 1;
@@ -319,6 +319,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 	}while((strcmp(codeBuffer, "EXIT0") != 0) || (quantity > 0));
 	//Print the receipt if *list is not NULL and there are elements in list 
 	if(list != NULL && listSize != 0){
+		puts("Printing receipt...");
 		//Print the receipt
 		printReceipt(list, listSize);
 		//Transaction is done, we don't need list anymore
