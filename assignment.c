@@ -79,9 +79,9 @@ int main(){
 			printf("Choice: ");
 			scanf(" %c", &choice);
 			sleep(1); //Pause for 1 second
-			//Do not clear screen if choice is '2', '3', '4', or '7'
+			//Clear screen only if choice is '1', '5', or '6'
 			//Used strchr check as a shortcut
-			if(strchr("2347", choice) == NULL)
+			if(strchr("156", choice) != NULL)
 				clearScreen(); 
 			switch(choice){
 				case '1':	purchaseItems(gst, ngst);		break;
@@ -92,11 +92,11 @@ int main(){
 				case '6':	dailyTransactions(gst, ngst);	break;
 				case '7':	puts("Goodbye.");	sleep(1);	break;
 				default: 
-					puts("Invalid option entered. Please try again.");
+					printf("\nInvalid option entered. Please try again.\n");
 					break;
 			}
-			//Pause for another 2 seconds if choice is '2', '3', '4', or '7'
-			if(strchr("2347", choice) != NULL)
+			//Pause for 2 seconds if choice is not '1', '5', '6', or '7'
+			if(strchr("1567", choice) == NULL)
 				sleep(2);
 			//Clear the screen
 			clearScreen();
@@ -199,7 +199,7 @@ void printReceipt(struct Item *list, int listLength){
 		printf("%2dx %-10s %5.2f %6.2f%s\n", 
 			list[i].itemsSold,	list[i].code,
 			list[i].price,	
-			list[i].price * list[i].itemsSold * (isItemGst ? 1.06 : 1.00),
+			list[i].price * list[i].itemsSold,
 			(isItemGst)? "SR" : "ZR"
 		);
 		//Print out item's name
@@ -209,8 +209,8 @@ void printReceipt(struct Item *list, int listLength){
 	total = gstTotal + ngstTotal;
 	//Print out total, gstTotal, ngstTotal, and gst to console
 	printf("\n");
-	printf("Total sales including GST: RM %6.2f\n", total + gst);
-	printf("Number of items sold:         %6d\n\n", totalSold);
+	printf("Total sales with GST: RM %6.2f\n", total + gst);
+	printf("Number of items sold: %6d\n\n", totalSold);
 	printf("%-20s\t%6s\t%6s\n", "GST Summary", "Amount", "Tax");
 	printf("%-20s\t%6.2f\t%6.2f\n", "SR @6%", gstTotal, gst);
 	printf("%-20s\t%6.2f\t%6.2f\n", "ZR @0%", ngstTotal, 0.00);
@@ -296,7 +296,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 						gstTotal += (list[listSize].price * quantity) * ((isItemGst)? 0.06 : 0);
 						//Print the item(s) bought and the new subtotal to console
 						printf("Item(s) bought: %dx %s\n", list[listSize].itemsSold, list[listSize].name);
-						printf("Subtotal      : RM %.2f (RM %.2f)\n\n", subTotal, gstTotal);
+						printf("Subtotal (gst): RM %.2f (RM %.2f)\n\n", subTotal, gstTotal);
 						//Finished with item
 						//Increment listSize by 1 to match with total count
 						listSize += 1;
@@ -336,17 +336,17 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 
 //This function edits an item
 void editItem(){
-	puts("This option allows user to edit Item");
+	puts("This option allows user to edit items");
 }
 
 //This function adds an item 
 void addItem(){
-	puts("This option allows user to add Item");
+	puts("This option allows user to add items");
 }
 
 //This function deletes an item
 void deleteItem(){
-	puts("This option allows user to delete Item");
+	puts("This option allows user to delete items");
 }
 
 //This function shows the current inventory
