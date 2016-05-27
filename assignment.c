@@ -70,7 +70,7 @@ int main(){
 				);
 			//Null character terminator needed for string printing
 			ngst[i].code[5] = '\0';
-			//No Item have been sold yet, so set each ItemSold to 0
+			//No items have been sold yet, so set each ItemSold to 0
 			ngst[i].itemsSold = 0;
 		}
 		//Main operation loop
@@ -101,16 +101,18 @@ int main(){
 			//Clear the screen
 			clearScreen();
 		}while(choice != '7');
+		//Close files
+		fclose(gst_file);
+		fclose(ngst_file);
 	}
 	//If opening files has an error,
 	//immediately print generic error message and exit.
 	else{
-		puts("Cannot open either gst.txt, or ngst.txt.");
-		puts("Please close all programs using either two files try again later.");
+		puts("Cannot open either gst.txt, ngst.txt, or both.");
+		puts("Solutions:");
+		puts("1. Add those two files and try again.");
+		puts("2. Close any programs using them and try again.");
 	}
-	//Close files
-	fclose(gst_file);
-	fclose(ngst_file);
 	return 0;
 }
 
@@ -185,7 +187,7 @@ void printReceipt(struct Item *list, int listLength){
 		//Has already been filtered during purchasing phase
 		//Store result in an int
 		int isItemGst = (list[i].code[1] == 'G');
-		//Add item to gstTotal or ngstTotal whether or not it has GST
+		//Add item to gstTotal or ngstTotal depending on if it has GST
 		if(isItemGst){
 			gstTotal += (list[i].price * list[i].itemsSold); 
 			gst += (list[i].price * list[i].itemsSold) * 6 / 100;
@@ -353,8 +355,8 @@ void deleteItem(){
 void showInventory(struct Item *gst, struct Item *ngst){
 	char excess;
 	int i;
-	//Print Taxable Item
-	printf("Taxable Item:\n\n");
+	//Print GST items
+	printf("GST items:\n\n");
 	printf("%s\t%-20s\t%-6s\t%-6s\n", 
 		"Code", "Name", "Price", "Quantity");
 	puts("-------------------------------------------------");
@@ -365,8 +367,8 @@ void showInventory(struct Item *gst, struct Item *ngst){
 			);
 	}
 	printf("\n\n");
-	//Print Non-taxable Item
-	printf("Non-taxable Item:\n\n");
+	//Print Non-GST items
+	printf("Non-GST items:\n\n");
 	printf("%s\t%-20s\t%-6s\t%-6s\n", 
 		"Code", "Name", "Price", "Quantity");
 	puts("-------------------------------------------------");
@@ -397,7 +399,7 @@ void dailyTransactions(struct Item *gst, struct Item *ngst){
 		gstTotal += gst[i].price * gst[i].itemsSold;
 	}
 	//Calculate GST collected
-	gstCollected += gstTotal * 0.06;
+	gstCollected = gstTotal * 0.06;
 	//Get total from ngst
 	for(i = 0; i < NGST_Items; i++){
 		//Increment total items sold
