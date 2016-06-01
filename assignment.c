@@ -424,6 +424,7 @@ void showInventory(struct Item *gst, struct Item *ngst){
 	}
 	printf("\nEnter any character to continue...  ");
 	scanf(" %c", &excess);
+	fflush(stdin);
 }
 
 //This function shows the transactions made today
@@ -459,4 +460,5 @@ void dailyTransactions(struct Item *gst, struct Item *ngst){
 	//Prompt user to enter a character to continue
 	printf("\n\nEnter any character to continue...  ");
 	scanf(" %c", &excess);
+	fflush(stdin);
 }
