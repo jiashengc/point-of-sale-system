@@ -85,6 +85,8 @@ int main(){
 			printOptions();
 			printf("Choice: ");
 			scanf(" %c", &choice);
+			//Remove extra characters
+			while(getchar() != '\n');
 			sleep(1); //Pause for 1 second
 
 			if(strchr("156", choice) != NULL) //Clear screen only if choice is '1', '5', or '6', strchr check as a shortcut
@@ -357,6 +359,9 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 		fflush(stdin);
 	} while((strcmp(codeBuffer, "EXIT0") != 0) || (quantity > 0));
 
+	//Clear input stream
+	while(getchar() != '\n');
+	
 	//Print the receipt if *list is not NULL and there are elements in list
 	if(list != NULL && listSize != 0){
 		puts("Printing receipt...");
@@ -373,9 +378,9 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 		printf("No items received. No receipt printed.\n");
 	}
 
-	//Prompt user to enter a character to continue
-	printf("\n\nEnter any character to continue...  ");
-	scanf(" %c", &excess);
+	//Prompt user to enter to continue
+	printf("\n\nEnter to continue...  ");
+	while(getchar() != '\n');
 }
 
 //This function edits an item
@@ -422,9 +427,10 @@ void showInventory(struct Item *gst, struct Item *ngst){
 			ngst[i].code, ngst[i].name, ngst[i].price, remaining
 			);
 	}
-	printf("\nEnter any character to continue...  ");
-	scanf(" %c", &excess);
-	fflush(stdin);
+	
+	//Prompt user to enter to continue
+	printf("\nEnter to continue...  ");
+	while(getchar() != '\n');
 }
 
 //This function shows the transactions made today
@@ -457,8 +463,7 @@ void dailyTransactions(struct Item *gst, struct Item *ngst){
 	printf("Sales without GST\t: RM %.2f\n", ngstTotal);
 	printf("GST collected\t\t: RM %.2f\n", gstCollected);
 
-	//Prompt user to enter a character to continue
-	printf("\n\nEnter any character to continue...  ");
-	scanf(" %c", &excess);
-	fflush(stdin);
+	//Prompt user to enter to continue
+	printf("\n\nEnter to continue...  ");
+	while(getchar() != '\n');
 }
