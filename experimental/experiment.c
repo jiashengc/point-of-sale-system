@@ -22,6 +22,46 @@ struct Item {
 struct ItemArray {
 	int size; //Store the size of array here
 	struct Item *array;
+};
+
+int countLines(FILE *file){
+	int result = 0;
+	while(!feof(file)){
+		char c = fgetc(file);
+		if(c == '\n'){
+			result++;
+		}
+	}
+	//Off-by-one problem; Will solve later
+	result++;
+	rewind(file);
+	return result;
+}
+
+struct ItemArray readFile(FILE *file){
+	struct ItemArray result;
+	result.size = countLines(file);
+	result.array = malloc(sizeof(struct Item) * result.size);
+	int i;
+	for(i = 0; i < result.size; i++){
+		fscanf(file, "%5c;%[a-zA-Z ];%lf;%d\n",
+			result.array[i].code, result.array[i].name,
+			&result.array[i].price, &result.array[i].initialQuantity
+			);
+		result.array[i].code[5] = '\0'; //Null character terminator needed for string printing
+		result.array[i].itemsSold = 0; //No Item have been sold yet, so set each ItemSold to 0
+	}
+	return result;
+}
+
+void printArray(struct ItemArray target){
+	int i;
+	for(i = 0; i < target.size; i++){
+		printf("%s %s %.2f %d\n",
+			target.array[i].code, target.array[i].name,
+			target.array[i].price, target.array[i].initialQuantity
+			);
+	}
 }
 
 int main(){
@@ -33,6 +73,12 @@ int main(){
 		printf("%.2f --> %.2f\n", value, roundToNearest5(value));
 	}
 	*/
+	
+	//Test for countLines and readFile
+	FILE *gst_file = fopen("../gst.txt", "r");
+	struct ItemArray test = readFile(gst_file);
+	printArray(test);
+	free(test.array);
 	
 	return 0;
 }
