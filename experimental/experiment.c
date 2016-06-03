@@ -25,15 +25,15 @@ struct ItemArray {
 };
 
 int countLines(FILE *file){
-	int result = 0;
+	//Starts from the first line, so start from 1
+	int result = 1; 
 	while(!feof(file)){
 		char c = fgetc(file);
 		if(c == '\n'){
 			result++;
 		}
 	}
-	//Off-by-one problem; Will solve later
-	result++;
+	//Returns file pointer to beginning
 	rewind(file);
 	return result;
 }
@@ -76,9 +76,13 @@ int main(){
 	
 	//Test for countLines and readFile
 	FILE *gst_file = fopen("../gst.txt", "r");
-	struct ItemArray test = readFile(gst_file);
-	printArray(test);
-	free(test.array);
+	FILE *ngst_file = fopen("../ngst.txt", "r");
+	struct ItemArray test1 = readFile(gst_file);
+	struct ItemArray test2 = readFile(ngst_file);
+	printArray(test1);
+	printArray(test2);
+	free(test1.array);
+	free(test2.array);
 	
 	return 0;
 }
