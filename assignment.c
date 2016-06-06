@@ -251,9 +251,10 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 	listSize = 0;
 
 	//Print instructions
-	puts("To purchase an item, enter it in this format:");
-	puts("\"item code, quantity\", no quotes");
-	puts("Enter \"EXIT0, -1\" to exit.");
+	puts("Purchase Option Selected");
+	puts("To exit:");
+	puts("Enter \"EXIT0\" in \"Item Code\", ");
+	puts("And \"-1\" in \"Quantity\" to exit.");
 	puts("------------------------------------");
 
 	//Main purchasing loop
@@ -267,8 +268,14 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 		char buffer[300];
 		memset(&code[0], 0, sizeof(code)); //Fill codeBuffer with zeroes
 		quantity = 0;
-		printf("Purchase: ");
-		scanf(" %[^,], %d", buffer, &quantity);
+		//Item code enter
+		printf("Item Code: ");
+		scanf(" %s", buffer);
+		//Remove remaining input before continuing
+		while(getchar() != '\n');
+		//Quantity enter
+		printf("Quantity:  ");
+		scanf(" %d", &quantity);
 		if(strlen(buffer) <= 5){
 			strncpy(code, buffer, 5);
 			//Proceed if quantity is positive
