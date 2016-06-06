@@ -253,8 +253,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 	//Print instructions
 	puts("Purchase Option Selected");
 	puts("To exit:");
-	puts("Enter \"EXIT0\" in \"Item Code\", ");
-	puts("And \"-1\" in \"Quantity\" to exit.");
+	puts("Enter \"-1\" in \"Item Code\" to exit ");
 	puts("------------------------------------");
 
 	//Main purchasing loop
@@ -268,11 +267,19 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 		char buffer[300];
 		memset(&code[0], 0, sizeof(code)); //Fill codeBuffer with zeroes
 		quantity = 0;
+		
 		//Item code enter
 		printf("Item Code: ");
 		scanf(" %s", buffer);
+		
+		//Break out of the system if -1 is input
+		if ((strcmp(buffer, "-1") == 0)) {
+			break;
+		}
+		
 		//Remove remaining input before continuing
 		while(getchar() != '\n');
+		
 		//Quantity enter
 		printf("Quantity:  ");
 		scanf(" %d", &quantity);
@@ -354,7 +361,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 				}
 			}
 			//All quantities are negative now
-			else if(strcmp(code, "EXIT0") != 0){ //If code is not "EXIT0", then prompt this error
+			else if(strcmp(code, "-1") != 0){ //If code is not "EXIT0", then prompt this error
 				printf("Invalid quantity. Please try again.\n\n");
 			}
 			else{ //Prompt exit message if passed both
@@ -362,7 +369,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 			}	
 		}
 		else{
-			printf("Code input is too long. Try again.\n\n");
+			printf("Invalid Item COde. Try again.\n\n");
 		}
 		fflush(stdin);
 	} while((strcmp(code, "EXIT0") != 0) || (quantity > 0));
