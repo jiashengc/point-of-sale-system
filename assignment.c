@@ -237,7 +237,6 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 
 	//Main purchasing loop
 	char code[6];
-	int quantity;
 
 	//Initial allocation
 	list.array = malloc(sizeof(struct Item));
@@ -245,109 +244,110 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 	do{ //do{}while() loop only exits when (EXIT0, -1) is entered
 		char buffer[300];
 		memset(&code[0], 0, sizeof(code)); //Fill codeBuffer with zeroes
-		quantity = 0;
 		
 		//Item code enter first
 		printf("Item Code: ");
 		scanf(" %s", buffer);
 		//Remove remaining input before continuing
 		while(getchar() != '\n');
+		strncpy(code, buffer, 5);
 		
-		if(strlen(buffer) <= 5){
-			strncpy(code, buffer, 5);
-			//Quantity enter
-			printf("Quantity:  ");
-			scanf(" %d", &quantity);
-			//Proceed if quantity is positive
-			if(quantity > 0){
-				//Check if item belongs to gst, ngst or neither
-				int itemCategory = doesItemExist(gst, ngst, code);
+		if(strcmp(code, "-1") != 0){ //If code is not "-1", then continue
+			if(strlen(buffer) == 5){ //Check if input is 5 characters long
+				int quantity;
+				//Quantity enter
+				printf("Quantity:  ");
+				scanf(" %d", &quantity);
+				//Proceed if quantity is positive
+				if(quantity > 0){
+					//Check if item belongs to gst, ngst or neither
+					int itemCategory = doesItemExist(gst, ngst, code);
 
-				//If it belongs to neither, print out error message and retry
-				if(itemCategory == -1){
-					printf("Invalid item code. Please try again.\n\n");
-				}
-
-				//If it belongs to either two, proceed as usual
-				else{
-
-					//Now we search for the item in either lists
-					//Check if it in gst or ngst
-					int isItemGst = (itemCategory == 1);
-
-					//Find the item's position in either gst or ngst
-					int position = whereIsItem(
-						(isItemGst)? gst : ngst,
-						code
-						);
-
-					//Create pointer to point to the structure array for easier thinking
-					struct ItemArray selected = (isItemGst)? gst : ngst;
-
-					//Check if there's enough stock left
-					//If not, print out error message and retry
-					if(selected.array[position].initialQuantity < selected.array[position].itemsSold + quantity){
-						printf("Not enough stock for purchase.Please try again\n\n");
+					//If it belongs to neither, print out error message and retry
+					if(itemCategory == -1){
+						printf("Invalid item code. Please try again.\n\n");
 					}
 
-					//Proceed as normal if there is enough to buy
+					//If it belongs to either two, proceed as usual
 					else{
+						//Now we search for the item in either lists
+						//Check if it in gst or ngst
+						int isItemGst = (itemCategory == 1);
 
-						//Expand list's capacity
-						struct Item *temp = realloc(list.array, (list.size + 1) * sizeof(struct Item));
+						//Find the item's position in either gst or ngst
+						int position = whereIsItem(
+							(isItemGst)? gst : ngst,
+							code
+							);
 
-						//DO NOT continue operation if temp is null
-						//Means that there's not enough memory in system
-						//Prompt user to close other programs before continuing
-						if(temp == NULL){
-							puts("Error: Not enough memory");
-							printf("Please close other programs before trying again.\n\n");
+						//Create pointer to point to the structure array for easier thinking
+						struct ItemArray selected = (isItemGst)? gst : ngst;
+
+						//Check if there's enough stock left
+						//If not, print out error message and retry
+						if(selected.array[position].initialQuantity < selected.array[position].itemsSold + quantity){
+							printf("Not enough stock for purchase.Please try again\n\n");
 						}
-						//Proceed as normal if otherwise
+
+						//Proceed as normal if there is enough to buy
 						else{
 
-							//Repoint list to new allocation
-							list.array = temp;
+							//Expand list's capacity
+							struct Item *temp = realloc(list.array, (list.size + 1) * sizeof(struct Item));
 
-							//Item has been found. Now load list with item found
-							list.array[list.size] = selected.array[position];
+							//DO NOT continue operation if temp is null
+							//Means that there's not enough memory in system
+							//Prompt user to close other programs before continuing
+							if(temp == NULL){
+								puts("Error: Not enough memory");
+								printf("Please close other programs before trying again.\n\n");
+							}
+							//Proceed as normal if otherwise
+							else{
+								
+								//Repoint list to new allocation
+								list.array = temp;
 
-							//Write quantity sold to itemsSold
-							list.array[list.size].itemsSold = quantity;
+								//Item has been found. Now load list with item found
+								list.array[list.size] = selected.array[position];
 
-							//Increase items sold of it in the selected list
-							selected.array[position].itemsSold += quantity;
+								//Write quantity sold to itemsSold
+								list.array[list.size].itemsSold = quantity;
 
-							//Calculate new subtotal with additional item(s)
-							subTotal += (list.array[list.size].price * quantity) * ((isItemGst)? 1.06 : 1.00);
-							gstTotal += (list.array[list.size].price * quantity) * ((isItemGst)? 0.06 : 0);
+								//Increase items sold of it in the selected list
+								selected.array[position].itemsSold += quantity;
 
-							//Print the item(s) bought and the new subtotal to console
-							printf("Item(s) bought: %dx %s\n", list.array[list.size].itemsSold, list.array[list.size].name);
-							printf("Subtotal (gst): RM %.2f (RM %.2f)\n\n", subTotal, gstTotal);
+								//Calculate new subtotal with additional item(s)
+								subTotal += (list.array[list.size].price * quantity) * ((isItemGst)? 1.06 : 1.00);
+								gstTotal += (list.array[list.size].price * quantity) * ((isItemGst)? 0.06 : 0);
 
-							//Increment listSize by 1 to match with total count
-							list.size += 1;
+								//Print the item(s) bought and the new subtotal to console
+								printf("Item(s) bought: %dx %s\n", list.array[list.size].itemsSold, list.array[list.size].name);
+								printf("Subtotal (gst): RM %.2f (RM %.2f)\n\n", subTotal, gstTotal);
+
+								//Increment listSize by 1 to match with total count
+								list.size += 1;
+							}
 						}
 					}
 				}
+				//All quantities are negative now
+				else{
+					printf("Invalid quantity. Please try again.\n\n");
+				}	
 			}
-			//All quantities are negative now
-			else if(strcmp(code, "-1") != 0){ //If code is not "-1", then prompt this error
-				printf("Invalid quantity. Please try again.\n\n");
+			else{ //Print error otherwise
+				printf("Invalid code entered. Try again.\n\n");
 			}
-			else{ //Prompt exit message if passed both
-				printf("Purchase(s) completed. Exiting...\n\n");
-			}	
 		}
 		else{
-			printf("Invalid Item Code. Try again.\n\n");
+			printf("Purchase(s) completed. Exiting...\n\n");
 		}
 		fflush(stdin);
-	} while((strcmp(code, "-1") != 0) || (quantity > 0));
+	} while(strcmp(code, "-1") != 0);
 
 	//Clear input stream
-	while(getchar() != '\n');
+	//while(getchar() != '\n');
 	
 	//Print the receipt if *list is not NULL and there are elements in list
 	if(list.array != NULL && list.size != 0){
