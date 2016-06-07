@@ -10,9 +10,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define GST_Items 8
-#define NGST_Items 6
-
 struct Item {
 	char code[6];
 	char name[20];
@@ -21,25 +18,30 @@ struct Item {
 	int itemsSold;
 };
 
+struct ItemArray {
+	int size; //Store the size of array here
+	struct Item *array;
+};
+
 //Functions not listed here: doesItemExist(), whereIsItem(), and printReceipt()
 //Functions not listed here are only to be used by other functions, not the main loop
 void clearScreen(){ system("clear");} //Clears screen(Only works on Linux/Unix)
 void printOptions();
-void purchaseItems(struct Item *gst, struct Item *ngst);
+void purchaseItems(struct ItemArray gst, struct ItemArray ngst);
 void editItem();
 void addItem();
 void deleteItem();
-void showInventory(struct Item *gst, struct Item *ngst);
-void dailyTransactions(struct Item *gst, struct Item *ngst);
+void showInventory(struct ItemArray gst, struct ItemArray ngst);
+void dailyTransactions(struct ItemArray gst, struct ItemArray ngst);
+int countLines(FILE *file);
+struct ItemArray readFile(FILE *file);
 
 int main(){
-
 	//File pointers here
 	FILE *gst_file, *ngst_file;
 
-	//Fixed arrays to store the items
-	//TODO: Change to dynamic arrays (Hard in C)
-	struct Item gst[GST_Items], ngst[NGST_Items];
+	//Dynamic arrays to store the items
+	struct ItemArray gst, ngst;
 
 	//A variable to store the choices made
 	char choice;
@@ -53,32 +55,9 @@ int main(){
 	ngst_file = fopen("ngst.txt", "r");
 
 	if((gst_file != NULL) && (ngst_file != NULL)){ //If opening files is successfull, proceed as normal
-		int i;
-
-		//Read from gst_file and append each item into the array
-		for(i = 0; i < GST_Items; i++){
-			fscanf(gst_file, "%5c;%[a-zA-Z ];%lf;%d\n",
-				gst[i].code, gst[i].name,
-				&gst[i].price, &gst[i].initialQuantity
-				);
-
-			gst[i].code[5] = '\0'; //Null character terminator needed for string printing
-			gst[i].itemsSold = 0; //No Item have been sold yet, so set each ItemSold to 0
-
-		}
-
-		for(i = 0; i < NGST_Items; i++){
-
-			//Read from ngst_file and append each item into array
-			fscanf(ngst_file, "%5c;%[a-zA-Z ];%lf;%d\n",
-				ngst[i].code, ngst[i].name,
-				&ngst[i].price, &ngst[i].initialQuantity
-				);
-
-			ngst[i].code[5] = '\0'; //Null character terminator needed for string printing
-			ngst[i].itemsSold = 0; //No items have been sold yet, so set each ItemSold to 0
-
-		}
+		//Read both files
+		gst = readFile(gst_file);
+		ngst = readFile(ngst_file);
 
 		//Main operation loop
 		do{
@@ -146,21 +125,21 @@ void printOptions(){
 /* This function checks whether the item is in gst, ngst, or neither
 Returns 1 if it has gst, 0 if it does not
 Returns -1 if neither */
-int doesItemExist(struct Item *gst, struct Item *ngst, char *itemCode){
+int doesItemExist(struct ItemArray gst, struct ItemArray ngst, char *itemCode){
 
 	//All gst Item have 'G' as 2nd character
 	if(itemCode[1] == 'G'){
 		int i;
-		for(i = 0; i < GST_Items; i++)
-			if(strcmp(itemCode, gst[i].code) == 0)
+		for(i = 0; i < gst.size; i++)
+			if(strcmp(itemCode, gst.array[i].code) == 0)
 				return 1;
 	}
 
 	//All ngst Item have 'N' as 2nd character
 	else if(itemCode[1] == 'N'){
 		int i;
-		for(i = 0; i < NGST_Items; i++)
-			if(strcmp(itemCode, ngst[i].code) == 0)
+		for(i = 0; i < ngst.size; i++)
+			if(strcmp(itemCode, ngst.array[i].code) == 0)
 				return 0;
 	}
 
@@ -172,11 +151,11 @@ MUST be used after doesItemExist(). NO EXCEPTIONS.
 Returns the item's position in the array if found
 If failed, return -1 (SHOULD NEVER HAPPEN)
 Used to further refine the search for the item */
-int whereIsItem(struct Item *list, int listLength, char *itemCode){
+int whereIsItem(struct ItemArray list, char *itemCode){
 	int i;
-	for(i = 0; i < listLength; i++){
+	for(i = 0; i < list.size; i++){
 		//Return position of list(currently stored in i), if found
-		if(strcmp(itemCode, list[i].code) == 0)
+		if(strcmp(itemCode, list.array[i].code) == 0)
 			return i;
 	}
 
@@ -184,7 +163,7 @@ int whereIsItem(struct Item *list, int listLength, char *itemCode){
 }
 
 //This function is used to print the receipt
-void printReceipt(struct Item *list, int listLength){
+void printReceipt(struct ItemArray list){
 	int i, totalSold;
 	double gstTotal, ngstTotal, gst, total;
 
@@ -195,33 +174,33 @@ void printReceipt(struct Item *list, int listLength){
 
 	//--Execution starts here--
 	printf("Receipt:\n\n");
-	for(i = 0; i < listLength; i++){
+	for(i = 0; i < list.size; i++){
 
 		//Item code can only be 'G' or 'N', and now stored as an int
-		int isItemGst = (list[i].code[1] == 'G');
+		int isItemGst = (list.array[i].code[1] == 'G');
 
 		//Add item to gstTotal or ngstTotal depending on if it has GST
 		if(isItemGst){
-			gstTotal += (list[i].price * list[i].itemsSold);
-			gst += (list[i].price * list[i].itemsSold) * 6 / 100;
+			gstTotal += (list.array[i].price * list.array[i].itemsSold);
+			gst += (list.array[i].price * list.array[i].itemsSold) * 6 / 100;
 		}
 		else{
-			ngstTotal += (list[i].price * list[i].itemsSold);
+			ngstTotal += (list.array[i].price * list.array[i].itemsSold);
 		}
 
 		//Add quantity of items sold to totalSold
-		totalSold += list[i].itemsSold;
+		totalSold += list.array[i].itemsSold;
 
 		//Print out item's quantity, code, price, and subtotal to console
 		printf("%2dx %-10s %5.2f %6.2f%s\n",
-			list[i].itemsSold,	list[i].code,
-			list[i].price,
-			list[i].price * list[i].itemsSold,
+			list.array[i].itemsSold,	list.array[i].code,
+			list.array[i].price,
+			list.array[i].price * list.array[i].itemsSold,
 			(isItemGst)? "SR" : "ZR"
 		);
 
 		//Print out item's name
-		printf("   %-20s\n", list[i].name);
+		printf("   %-20s\n", list.array[i].name);
 	}
 
 	//Get the total of the purchase(s)
@@ -239,8 +218,8 @@ void printReceipt(struct Item *list, int listLength){
 
 /* This function allows customers to purchase items
 Prints a receipt after the customer is finished */
-void purchaseItems(struct Item *gst, struct Item *ngst){
-	struct Item *list;	int listSize;
+void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
+	struct ItemArray list;
 	double subTotal, gstTotal;
 	char excess;
 
@@ -248,7 +227,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 	subTotal = 0;	gstTotal = 0;
 
 	//Start from beginning of array
-	listSize = 0;
+	list.size = 0;
 
 	//Print instructions
 	puts("Purchase Option Selected");
@@ -261,30 +240,24 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 	int quantity;
 
 	//Initial allocation
-	list = malloc(sizeof(struct Item));
+	list.array = malloc(sizeof(struct Item));
 
 	do{ //do{}while() loop only exits when (EXIT0, -1) is entered
 		char buffer[300];
 		memset(&code[0], 0, sizeof(code)); //Fill codeBuffer with zeroes
 		quantity = 0;
 		
-		//Item code enter
+		//Item code enter first
 		printf("Item Code: ");
 		scanf(" %s", buffer);
-		
-		//Break out of the system if -1 is input
-		if ((strcmp(buffer, "-1") == 0)) {
-			break;
-		}
-		
 		//Remove remaining input before continuing
 		while(getchar() != '\n');
 		
-		//Quantity enter
-		printf("Quantity:  ");
-		scanf(" %d", &quantity);
 		if(strlen(buffer) <= 5){
 			strncpy(code, buffer, 5);
+			//Quantity enter
+			printf("Quantity:  ");
+			scanf(" %d", &quantity);
 			//Proceed if quantity is positive
 			if(quantity > 0){
 				//Check if item belongs to gst, ngst or neither
@@ -305,16 +278,15 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 					//Find the item's position in either gst or ngst
 					int position = whereIsItem(
 						(isItemGst)? gst : ngst,
-						(isItemGst)? GST_Items : NGST_Items,
 						code
 						);
 
 					//Create pointer to point to the structure array for easier thinking
-					struct Item *selected = (isItemGst)? gst : ngst;
+					struct ItemArray selected = (isItemGst)? gst : ngst;
 
 					//Check if there's enough stock left
 					//If not, print out error message and retry
-					if(selected[position].initialQuantity < selected[position].itemsSold + quantity){
+					if(selected.array[position].initialQuantity < selected.array[position].itemsSold + quantity){
 						printf("Not enough stock for purchase.Please try again\n\n");
 					}
 
@@ -322,7 +294,7 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 					else{
 
 						//Expand list's capacity
-						struct Item *temp = realloc(list, (listSize + 1) * sizeof(struct Item));
+						struct Item *temp = realloc(list.array, (list.size + 1) * sizeof(struct Item));
 
 						//DO NOT continue operation if temp is null
 						//Means that there's not enough memory in system
@@ -335,33 +307,33 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 						else{
 
 							//Repoint list to new allocation
-							list = temp;
+							list.array = temp;
 
 							//Item has been found. Now load list with item found
-							list[listSize] = selected[position];
+							list.array[list.size] = selected.array[position];
 
 							//Write quantity sold to itemsSold
-							list[listSize].itemsSold = quantity;
+							list.array[list.size].itemsSold = quantity;
 
 							//Increase items sold of it in the selected list
-							selected[position].itemsSold += quantity;
+							selected.array[position].itemsSold += quantity;
 
 							//Calculate new subtotal with additional item(s)
-							subTotal += (list[listSize].price * quantity) * ((isItemGst)? 1.06 : 1.00);
-							gstTotal += (list[listSize].price * quantity) * ((isItemGst)? 0.06 : 0);
+							subTotal += (list.array[list.size].price * quantity) * ((isItemGst)? 1.06 : 1.00);
+							gstTotal += (list.array[list.size].price * quantity) * ((isItemGst)? 0.06 : 0);
 
 							//Print the item(s) bought and the new subtotal to console
-							printf("Item(s) bought: %dx %s\n", list[listSize].itemsSold, list[listSize].name);
+							printf("Item(s) bought: %dx %s\n", list.array[list.size].itemsSold, list.array[list.size].name);
 							printf("Subtotal (gst): RM %.2f (RM %.2f)\n\n", subTotal, gstTotal);
 
 							//Increment listSize by 1 to match with total count
-							listSize += 1;
+							list.size += 1;
 						}
 					}
 				}
 			}
 			//All quantities are negative now
-			else if(strcmp(code, "-1") != 0){ //If code is not "EXIT0", then prompt this error
+			else if(strcmp(code, "-1") != 0){ //If code is not "-1", then prompt this error
 				printf("Invalid quantity. Please try again.\n\n");
 			}
 			else{ //Prompt exit message if passed both
@@ -369,23 +341,23 @@ void purchaseItems(struct Item *gst, struct Item *ngst){
 			}	
 		}
 		else{
-			printf("Invalid Item COde. Try again.\n\n");
+			printf("Invalid Item Code. Try again.\n\n");
 		}
 		fflush(stdin);
-	} while((strcmp(code, "EXIT0") != 0) || (quantity > 0));
+	} while((strcmp(code, "-1") != 0) || (quantity > 0));
 
 	//Clear input stream
 	while(getchar() != '\n');
 	
 	//Print the receipt if *list is not NULL and there are elements in list
-	if(list != NULL && listSize != 0){
+	if(list.array != NULL && list.size != 0){
 		puts("Printing receipt...");
 
 		//Print the receipt
-		printReceipt(list, listSize);
+		printReceipt(list);
 
 		//Transaction is done, we don't need list anymore
-		free(list);
+		free(list.array);
 	}
 
 	//Do not print receipt otherwise
@@ -414,8 +386,7 @@ void deleteItem(){
 }
 
 //This function shows the current inventory
-void showInventory(struct Item *gst, struct Item *ngst){
-	char excess;
+void showInventory(struct ItemArray gst, struct ItemArray ngst){
 	int i;
 
 	//Print GST items
@@ -423,10 +394,10 @@ void showInventory(struct Item *gst, struct Item *ngst){
 	printf("%s\t%-20s\t%-6s\t%-6s\n",
 		"Code", "Name", "Price", "Quantity");
 	puts("-------------------------------------------------");
-	for(i = 0; i < GST_Items; i++){
-		int remaining = gst[i].initialQuantity - gst[i].itemsSold;
+	for(i = 0; i < gst.size; i++){
+		int remaining = gst.array[i].initialQuantity - gst.array[i].itemsSold;
 		printf("%s\t%-20s\t%5.2f\t%d\n",
-			gst[i].code, gst[i].name, gst[i].price, remaining
+			gst.array[i].code, gst.array[i].name, gst.array[i].price, remaining
 			);
 	}
 	printf("\n\n");
@@ -436,10 +407,10 @@ void showInventory(struct Item *gst, struct Item *ngst){
 	printf("%s\t%-20s\t%-6s\t%-6s\n",
 		"Code", "Name", "Price", "Quantity");
 	puts("-------------------------------------------------");
-	for(i = 0; i < NGST_Items; i++){
-		int remaining = ngst[i].initialQuantity - ngst[i].itemsSold;
+	for(i = 0; i < ngst.size; i++){
+		int remaining = ngst.array[i].initialQuantity - ngst.array[i].itemsSold;
 		printf("%s\t%-20s\t%5.2f\t%d\n",
-			ngst[i].code, ngst[i].name, ngst[i].price, remaining
+			ngst.array[i].code, ngst.array[i].name, ngst.array[i].price, remaining
 			);
 	}
 	
@@ -449,7 +420,7 @@ void showInventory(struct Item *gst, struct Item *ngst){
 }
 
 //This function shows the transactions made today
-void dailyTransactions(struct Item *gst, struct Item *ngst){
+void dailyTransactions(struct ItemArray gst, struct ItemArray ngst){
 	int i; char excess;
 	int totalItemSold;
 	double gstTotal, ngstTotal, gstCollected;
@@ -460,16 +431,16 @@ void dailyTransactions(struct Item *gst, struct Item *ngst){
 	gstCollected = 0;
 
 	//Get total from gst
-	for(i = 0; i < GST_Items; i++){
-		totalItemSold += gst[i].itemsSold; //Increment total items sold
-		gstTotal += gst[i].price * gst[i].itemsSold; //Calculate total sales made with GST items
+	for(i = 0; i < gst.size; i++){
+		totalItemSold += gst.array[i].itemsSold; //Increment total items sold
+		gstTotal += gst.array[i].price * gst.array[i].itemsSold; //Calculate total sales made with GST items
 	}
 
 	gstCollected = gstTotal * 0.06; //Calculate GST collected
 
-	for(i = 0; i < NGST_Items; i++){ //Get total from ngst
-		totalItemSold += ngst[i].itemsSold; //Increment total items sold
-		ngstTotal += ngst[i].price * ngst[i].itemsSold; //Calculate total sales made with Non-GST items
+	for(i = 0; i < ngst.size; i++){ //Get total from ngst
+		totalItemSold += ngst.array[i].itemsSold; //Increment total items sold
+		ngstTotal += ngst.array[i].price * ngst.array[i].itemsSold; //Calculate total sales made with Non-GST items
 	}
 	
 	//Print out results to console
@@ -481,4 +452,34 @@ void dailyTransactions(struct Item *gst, struct Item *ngst){
 	//Prompt user to enter to continue
 	printf("\n\nEnter to continue...  ");
 	while(getchar() != '\n');
+}
+
+int countLines(FILE *file){
+	//Starts from the first line, so start from 1
+	int result = 1; 
+	while(!feof(file)){
+		char c = fgetc(file);
+		if(c == '\n'){
+			result++;
+		}
+	}
+	//Returns file pointer to beginning
+	rewind(file);
+	return result;
+}
+
+struct ItemArray readFile(FILE *file){
+	struct ItemArray result;
+	result.size = countLines(file);
+	result.array = malloc(sizeof(struct Item) * result.size);
+	int i;
+	for(i = 0; i < result.size; i++){
+		fscanf(file, "%5c;%[^;];%lf;%d\n",
+			result.array[i].code, result.array[i].name,
+			&result.array[i].price, &result.array[i].initialQuantity
+			);
+		result.array[i].code[5] = '\0'; //Null character terminator needed for string printing
+		result.array[i].itemsSold = 0; //No Item have been sold yet, so set each ItemSold to 0
+	}
+	return result;
 }

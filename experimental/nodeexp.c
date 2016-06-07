@@ -3,23 +3,25 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 
-void print_list(node_t * head) {
-    node_t * current = head;
-	if(current == NULL){
-		printf("There's nothing in this list.\n");
-	}
-	else{
-		do{
-			printf("%d\n", current->val);
-			current = current->next;
-		}while(current != NULL);
-	}
+struct node {
+    int val;
+    struct node * next;
+};
+
+void print_list(struct node * head) {
+    struct node * current = head;
+
+    while (current != NULL) {
+        printf("%d\n", current->val);
+        current = current->next;
+    }
 }
 
-int pop(node_t * head) {
+int pop(struct node * head) {
     int retval = -1;
-    node_t * next_node = NULL;
+    struct node * next_node = NULL;
 
     if (head == NULL) {
         return -1;
@@ -33,18 +35,18 @@ int pop(node_t * head) {
     return retval;
 }
 
-int remove_by_value(node_t * head, int val) {
-    node_t *previous, *current;
+int remove_by_value(struct node * head, int val) {
+    struct node *previous, *current;
 
     if (head == NULL) {
         return -1;
     }
 
-    if ((head)->val == val) {
+    if (head->val == val) {
         return pop(head);
     }
 
-    previous = current = (head)->next;
+    previous = current = head->next;
     while (current) {
         if (current->val == val) {
             previous->next = current->next;
@@ -58,8 +60,8 @@ int remove_by_value(node_t * head, int val) {
     return -1;
 }
 
-void delete_list(node_t *head) {
-    node_t  *current = head, 
+void delete_list(struct node *head) {
+    struct node  *current = head, 
             *next = head;
 
     while (current) {
@@ -69,41 +71,39 @@ void delete_list(node_t *head) {
     }
 }
 
-void push(node_t *head, int input){
-	if(head == NULL){
-		head = malloc(sizeof(node_t));
-		head->val = input;
-	}
-	else{
-		node_t *current = head;
-		while(current->next != NULL)
-			current = current->next;
-		current->next = malloc(sizeof(node_t));
-		current->next->val = input;
-	}		
+void push(struct node * head, int val) {
+    struct node * current = head;
+    while (current->next != NULL) {
+        current = current->next;
+    }
+
+    /* now we can add a new variable */
+    current->next = malloc(sizeof(struct node));
+    current->next->val = val;
+    current->next->next = NULL;
 }
 
-//This function is used to add another item to a linked list
+int main(void) {
+    struct node * test_list = malloc(sizeof(struct node));
 
-int main(){
-	//Test for roundToNearest5
+    test_list->val = 1;
+    //test_list->next = malloc(sizeof(struct node));
+    push(test_list, 2);
+	push(test_list, 3);
+	push(test_list, 4);
 	/*
-	int i;
-	for(i = 0; i < 1000; i++){
-		double value = (double)i / 100;
-		printf("%.2f --> %.2f\n", value, roundToNearest5(value));
-	}
+	test_list->next->val = 2;
+    test_list->next->next = malloc(sizeof(struct node));
+    test_list->next->next->val = 3;
+    test_list->next->next->next = malloc(sizeof(struct node));
+    test_list->next->next->next->val = 4;
+    test_list->next->next->next->next = NULL;
 	*/
 	
-	node_t * test_list;// = malloc(sizeof(node_t));
-
-    //test_list->val = 1;
-	int i;
-	for(i = 0; i < 10; i++)
-		push(test_list, i);
     remove_by_value(test_list, 3);
 
     print_list(test_list);
     delete_list(test_list);
-	return 0;
+
+    return EXIT_SUCCESS;
 }

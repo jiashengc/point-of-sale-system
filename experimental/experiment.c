@@ -44,7 +44,7 @@ struct ItemArray readFile(FILE *file){
 	result.array = malloc(sizeof(struct Item) * result.size);
 	int i;
 	for(i = 0; i < result.size; i++){
-		fscanf(file, "%5c;%[a-zA-Z ];%lf;%d\n",
+		fscanf(file, "%5c;%[^;];%lf;%d\n",
 			result.array[i].code, result.array[i].name,
 			&result.array[i].price, &result.array[i].initialQuantity
 			);
