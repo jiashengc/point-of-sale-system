@@ -12,7 +12,7 @@
 
 struct Item {
 	char code[6];
-	char name[20];
+	char name[31];
 	double price;
 	int initialQuantity;
 	int itemsSold;
@@ -28,20 +28,21 @@ struct ItemArray {
 void clearScreen(){ system("clear");} //Clears screen(Only works on Linux/Unix)
 void printOptions();
 void purchaseItems(struct ItemArray gst, struct ItemArray ngst);
-void editItem();
-void addItem();
-void deleteItem();
+void editItem(struct ItemArray gst, struct ItemArray ngst);
+void addItem(struct ItemArray gst, struct ItemArray ngst);
+void deleteItem(struct ItemArray gst, struct ItemArray ngst);
 void showInventory(struct ItemArray gst, struct ItemArray ngst);
 void dailyTransactions(struct ItemArray gst, struct ItemArray ngst);
 int countLines(FILE *file);
 struct ItemArray readFile(FILE *file);
+void quickSort(struct Item *input, int size);
 
 int main(){
 	//File pointers here
 	FILE *gst_file, *ngst_file;
 
-	//Dynamic arrays to store the items
-	struct ItemArray gst, ngst;
+	//Dynamic arrays to store the items from files, and items sold
+	struct ItemArray gst, ngst, sold;
 
 	//A variable to store the choices made
 	char choice;
@@ -51,10 +52,10 @@ int main(){
 	clearScreen();
 
 	//Open both files
-	gst_file = fopen("gst.txt", "r");
-	ngst_file = fopen("ngst.txt", "r");
+	gst_file = fopen("gst.txt", "r+");
+	ngst_file = fopen("ngst.txt", "r+");
 
-	if((gst_file != NULL) && (ngst_file != NULL)){ //If opening files is successfull, proceed as normal
+	if((gst_file != NULL) && (ngst_file != NULL)){ //If opening files is successful, proceed as normal
 		//Read both files
 		gst = readFile(gst_file);
 		ngst = readFile(ngst_file);
@@ -72,9 +73,9 @@ int main(){
 				clearScreen();
 			switch(choice){
 				case '1':	purchaseItems(gst, ngst);		break;
-				case '2':	editItem();						break;
-				case '3':	addItem();						break;
-				case '4':	deleteItem();					break;
+				case '2':	editItem(gst, ngst);			break;
+				case '3':	addItem(gst, ngst);				break;
+				case '4':	deleteItem(gst, ngst);			break;
 				case '5':	showInventory(gst, ngst);		break;
 				case '6':	dailyTransactions(gst, ngst);	break;
 				case '7':	puts("Goodbye.");	sleep(1);	break;
@@ -122,11 +123,18 @@ void printOptions(){
 	puts("");
 }
 
-/* This function checks whether the item is in gst, ngst, or neither
-Returns 1 if it has gst, 0 if it does not
-Returns -1 if neither */
-int doesItemExist(struct ItemArray gst, struct ItemArray ngst, char *itemCode){
-
+/* This function checks whether the item is in gst, ngst, list, or none
+Returns 2 if it is already in list, 1 if it has gst, 0 if it does not
+Returns -1 if none */
+int doesItemExist(struct ItemArray gst, struct ItemArray ngst, struct ItemArray list, char *itemCode){
+	int i;
+	//Check if it exists in the list already
+	for(i = 0; i < list.size; i++){
+		if(strcmp(itemCode, list.array[i].code) == 0)
+			return 2;
+	}
+	
+	//If not, proceed to gst and ngst arrays
 	//All gst Item have 'G' as 2nd character
 	if(itemCode[1] == 'G'){
 		int i;
@@ -163,7 +171,7 @@ int whereIsItem(struct ItemArray list, char *itemCode){
 }
 
 //This function is used to print the receipt
-void printReceipt(struct ItemArray list){
+void printReceiptOnScreen(struct ItemArray list){
 	int i, totalSold;
 	double gstTotal, ngstTotal, gst, total;
 
@@ -216,6 +224,11 @@ void printReceipt(struct ItemArray list){
 	printf("%-20s\t%6.2f\t%6.2f\n", "Total", total, gst);
 }
 
+//This function prints/updates the file purchase.txt
+void printPurchasedFile(struct ItemArray gst, struct ItemArray ngst){
+	
+}
+
 /* This function allows customers to purchase items
 Prints a receipt after the customer is finished */
 void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
@@ -261,14 +274,23 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 				//Proceed if quantity is positive
 				if(quantity > 0){
 					//Check if item belongs to gst, ngst or neither
-					int itemCategory = doesItemExist(gst, ngst, code);
+					int itemCategory = doesItemExist(gst, ngst, list, code);
 
 					//If it belongs to neither, print out error message and retry
 					if(itemCategory == -1){
 						printf("Invalid item code. Please try again.\n\n");
 					}
-
-					//If it belongs to either two, proceed as usual
+					
+					//If it already is in list, check in list and update there
+					else if(itemCategory == 2){
+						//Find the item's position in list
+						int position = whereIsItem(list, code);
+						
+						//Increment counter to new quantity sold
+						list.array[position].itemsSold += quantity;
+					}
+					
+					//If not, check in gst or ngst
 					else{
 						//Now we search for the item in either lists
 						//Check if it in gst or ngst
@@ -286,7 +308,9 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 						//Check if there's enough stock left
 						//If not, print out error message and retry
 						if(selected.array[position].initialQuantity < selected.array[position].itemsSold + quantity){
-							printf("Not enough stock for purchase.Please try again\n\n");
+							printf("Not enough stock for purchase.\n");
+							printf("Remaining stock: %d", 
+								selected.array[position].initialQuantity - selected.array[position].itemsSold);
 						}
 
 						//Proceed as normal if there is enough to buy
@@ -316,7 +340,7 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 
 								//Increase items sold of it in the selected list
 								selected.array[position].itemsSold += quantity;
-
+								
 								//Calculate new subtotal with additional item(s)
 								subTotal += (list.array[list.size].price * quantity) * ((isItemGst)? 1.06 : 1.00);
 								gstTotal += (list.array[list.size].price * quantity) * ((isItemGst)? 0.06 : 0);
@@ -354,7 +378,8 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 		puts("Printing receipt...");
 
 		//Print the receipt
-		printReceipt(list);
+		printReceiptOnScreen(list);
+		//printReceiptToFile(list);
 
 		//Transaction is done, we don't need list anymore
 		free(list.array);
@@ -371,17 +396,162 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 }
 
 //This function edits an item
-void editItem(){
+void editItem(struct ItemArray gst, struct ItemArray ngst){
 	puts("This option allows user to edit items");
 }
 
+//This function checks if the code entered is correct
+//Returns 1 if correct, an error message and 0 if not
+int isCodeCorrect(char *input, int isInputGst){
+	int result;
+	int i;
+	//Check 1st character if it is a digit. Quit if yes
+	if(strchr("1234567890", input[0]) != NULL){
+		printf("1st character must be a letter. Try again.\n");
+		return 0;
+	}
+	//Checks if last 3 characters are digits
+	for(i = 2; i <= 4; i++){
+		if(strchr("1234567890", input[i]) == NULL){
+			printf("Last 3 characters must be numbers. Try again.\n");
+			return 0;
+		}
+	}
+	//Checks if has 'G' or 'N' @ 2nd character, depending on isInputGst
+	if(input[1] != ((isInputGst)? 'G' : 'N') ){
+		printf("Second character of code is not \'%c\'. Try again.\n", (isInputGst)? 'G' : 'N' );
+		return 0;
+	}
+	//Code now follows the standard. Return 1 now.
+	return 1;
+}
+
 //This function adds an item
-void addItem(){
+void addItem(struct ItemArray gst, struct ItemArray ngst){
+	char choice;
+	int isInputGst = 0;
+	struct Item input;
 	puts("This option allows user to add items");
+	//Request if item has GST or not. Keep requesting otherwise.
+	do{
+		printf("Does the item have GST?(Y/N) ");
+		scanf(" %c", &choice);
+		//Remove remaining input before continuing
+		while(getchar() != '\n');
+		if(strchr("YyNn", choice) == NULL){
+			printf("Incorrect input. Please enter again.\n\n");
+		}
+	}while(strchr("YyNn", choice) == NULL);
+	//Change isInputGst to 1 if Y or y. Don't change otherwise.
+	if(strchr("Yy", choice) != NULL)
+		isInputGst = 1;
+	//Request item's code. Keep requesting if wrong.
+	int codeInputSuccessful = 0;
+	do{		
+		char buffer[100];
+		printf("Enter the item's code in uppercase: ");
+		scanf(" %s", buffer);
+		//Remove remaining input before continuing
+		while(getchar() != '\n');
+		if(strlen(buffer) == 5){
+			if(isCodeCorrect(buffer, isInputGst)){
+				strncpy(input.code, buffer, 5);
+				input.code[5] = '\0';
+				codeInputSuccessful = 1;
+			}
+			else{
+				printf("\n");
+			}
+		}
+		else{ //Print error otherwise
+			printf("Code entered is not 5 characters long. Try again.\n\n");
+		}
+	}while(codeInputSuccessful == 0);
+	//Request item's name. Keep requesting if wrong.
+	int nameInputSuccessful = 0;
+	do{		
+		char buffer[50];
+		printf("Enter the item's name: ");
+		scanf(" %s", buffer);
+		//Remove remaining input before continuing
+		while(getchar() != '\n');
+		if((strlen(buffer) <= 30) && (strlen(buffer) > 0)){
+			memset(&input.name[0], 0, sizeof(input.name));
+			strncpy(input.name, buffer, strlen(buffer));
+			input.name[30] = '\0';
+			nameInputSuccessful = 1;
+		}
+		else{ //Print error otherwise
+			printf("Code entered is not 1 to 50 characters long. Try again.\n\n");
+		}
+	}while(nameInputSuccessful == 0);
+	//Request item's price. Keep requesting if wrong.
+	int priceInputSuccessful = 0;
+	do{
+		double priceBuffer;
+		printf("Enter the item's price: ");
+		scanf(" %lf", &priceBuffer);
+		//Remove remaining input before continuing
+		while(getchar() != '\n');
+		if(priceBuffer > 0.00){
+			input.price = priceBuffer;
+			priceInputSuccessful = 1;
+		}
+		else
+			printf("Item must have a price of more than 0.00. Try again.\n\n");	
+	}while(priceInputSuccessful == 0);
+	//Request item's quantity. Keep requesting if wrong.
+	int quantityInputSuccessful = 0;
+	do{
+		int quantityBuffer;
+		printf("Enter the item's initial quantity: ");
+		scanf(" %d", &quantityBuffer);
+		//Remove remaining input before continuing
+		while(getchar() != '\n');
+		if(quantityBuffer > 0){
+			input.initialQuantity = quantityBuffer;
+			quantityInputSuccessful = 1;
+		}
+		else
+			printf("Item must have a price of more than 0.00. Try again.\n\n");	
+	}while(quantityInputSuccessful == 0);
+	//Items sold of new item is 0 by default.
+	input.itemsSold = 0;
+	//DO NOT continue operation if temp is null
+	//Means that there's not enough memory in system
+	//Prompt user to close other programs before continuing
+	//Branch into two options. Currently cannot be reduced.
+	if(isInputGst){
+		struct Item *temp = realloc(gst.array, (gst.size + 1) * sizeof(struct Item));
+		gst.array = temp;
+		//Use old arraySize since it now can help point to the last element
+		gst.array[gst.size] = input;
+		//Increment gst's size by 1 
+		gst.size++;
+		//Sort the input
+		//quickSort(gst.array, gst.size);
+		int i;
+		for(i = 0; i < gst.size; i++){
+			int remaining = gst.array[i].initialQuantity - gst.array[i].itemsSold;
+			printf("%s\t%-50s\t%8.2f\t%d\n",
+			gst.array[i].code, gst.array[i].name, gst.array[i].price, remaining
+			);
+		}
+	}
+	else{
+		struct Item *temp = realloc(ngst.array, (ngst.size + 1) * sizeof(struct Item));
+		ngst.array = temp;
+		//Use old arraySize since it now can help point to the last element
+		ngst.array[ngst.size] = input;
+		//Increment ngst's size by 1 
+		ngst.size += 1;
+		//Sort the array
+		//quickSort(ngst.array, ngst.size);
+	}
 }
 
 //This function deletes an item
-void deleteItem(){
+void deleteItem(struct ItemArray gst, struct ItemArray ngst){
 	puts("This option allows user to delete items");
 }
 
@@ -391,12 +561,12 @@ void showInventory(struct ItemArray gst, struct ItemArray ngst){
 
 	//Print GST items
 	printf("GST items:\n\n");
-	printf("%s\t%-20s\t%-6s\t%-6s\n",
+	printf("%s\t%-30s\t%-8s\t%-8s\n",
 		"Code", "Name", "Price", "Quantity");
 	puts("-------------------------------------------------");
 	for(i = 0; i < gst.size; i++){
 		int remaining = gst.array[i].initialQuantity - gst.array[i].itemsSold;
-		printf("%s\t%-20s\t%5.2f\t%d\n",
+		printf("%s\t%-30s\t%8.2f\t%d\n",
 			gst.array[i].code, gst.array[i].name, gst.array[i].price, remaining
 			);
 	}
@@ -404,12 +574,12 @@ void showInventory(struct ItemArray gst, struct ItemArray ngst){
 
 	//Print Non-GST items
 	printf("Non-GST items:\n\n");
-	printf("%s\t%-20s\t%-6s\t%-6s\n",
+	printf("%s\t%-30s\t%-8s\t%-8s\n",
 		"Code", "Name", "Price", "Quantity");
 	puts("-------------------------------------------------");
 	for(i = 0; i < ngst.size; i++){
 		int remaining = ngst.array[i].initialQuantity - ngst.array[i].itemsSold;
-		printf("%s\t%-20s\t%5.2f\t%d\n",
+		printf("%s\t%-30s\t%8.2f\t%d\n",
 			ngst.array[i].code, ngst.array[i].name, ngst.array[i].price, remaining
 			);
 	}
@@ -482,4 +652,36 @@ struct ItemArray readFile(FILE *file){
 		result.array[i].itemsSold = 0; //No Item have been sold yet, so set each ItemSold to 0
 	}
 	return result;
+}
+
+//This function is used to sort the arrays in alphabetical order
+//This function uses quick sort to solve the problem
+void quickSort(struct Item *input, int size){
+    struct Item temp, middle;
+	int i, j;
+    if (size < 2)
+        return;
+	//Select the middle element for comparison
+	middle = input[size / 2];
+	//i is initialised at the start of the array
+	//j is initialised at the end of the array
+    for (i = 0, j = size - 1;; i++, j--) {
+		//Increment i until there's an element larger than the middle
+        while (strcmp(input[i].code, middle.code) < 0)
+            i++;
+		//Decrement j until there's an element smaller than the middle
+        while (strcmp(input[j].code, middle.code) > 0)
+            j--;
+		//Stop the loop if i and j pass each other
+        if (i >= j)
+            break;
+		//Perform exchange between elements i and j
+        temp = input[i];
+        input[i] = input[j];
+        input[j] = temp;
+    }
+	//Recursively do this for the first half
+    quickSort(input, i);
+	//Recursively do this for the second half
+    quickSort(input + i, size - i);
 }

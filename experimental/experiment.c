@@ -76,8 +76,11 @@ int main(){
 	
 	//Test for countLines and readFile
 	FILE *gst_file = fopen("../gst.txt", "r");
-	FILE *ngst_file = fopen("../ngst.txt", "r");
+	FILE *ngst_file = fopen("../gst.txt", "r+");
 	struct ItemArray test1 = readFile(gst_file);
+	fseek(ngst_file, 0, SEEK_END);
+	fprintf(ngst_file,"\nDG003;Example One;2.30;25");
+	rewind(ngst_file);
 	struct ItemArray test2 = readFile(ngst_file);
 	printArray(test1);
 	printArray(test2);
