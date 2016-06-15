@@ -29,7 +29,7 @@ void clearScreen(){ system("clear");} //Clears screen(Only works on Linux/Unix)
 void printOptions();
 void purchaseItems(struct ItemArray gst, struct ItemArray ngst);
 void editItem(struct ItemArray gst, struct ItemArray ngst);
-void addItem(struct ItemArray gst, struct ItemArray ngst);
+void addItem(struct ItemArray *gst, struct ItemArray *ngst);
 void deleteItem(struct ItemArray gst, struct ItemArray ngst);
 void showInventory(struct ItemArray gst, struct ItemArray ngst);
 void dailyTransactions(struct ItemArray gst, struct ItemArray ngst);
@@ -59,6 +59,10 @@ int main(){
 		//Read both files
 		gst = readFile(gst_file);
 		ngst = readFile(ngst_file);
+		
+		//Close files. We don't need them for now.
+		fclose(gst_file);
+		fclose(ngst_file);
 
 		//Main operation loop
 		do{
@@ -68,13 +72,14 @@ int main(){
 			//Remove extra characters
 			while(getchar() != '\n');
 			sleep(1); //Pause for 1 second
-
-			if(strchr("156", choice) != NULL) //Clear screen only if choice is '1', '5', or '6', strchr check as a shortcut
-				clearScreen();
+			
+			//Clear the screen
+			clearScreen();
+			
 			switch(choice){
 				case '1':	purchaseItems(gst, ngst);		break;
 				case '2':	editItem(gst, ngst);			break;
-				case '3':	addItem(gst, ngst);				break;
+				case '3':	addItem(&gst, &ngst);			break;
 				case '4':	deleteItem(gst, ngst);			break;
 				case '5':	showInventory(gst, ngst);		break;
 				case '6':	dailyTransactions(gst, ngst);	break;
@@ -90,10 +95,6 @@ int main(){
 
 			clearScreen();
 		} while(choice != '7');
-
-		//Close files
-		fclose(gst_file);
-		fclose(ngst_file);
 	}
 
 	//If opening files has an error,
@@ -402,7 +403,7 @@ void editItem(struct ItemArray gst, struct ItemArray ngst){
 
 //This function checks if the code entered is correct
 //Returns 1 if correct, an error message and 0 if not
-int isCodeCorrect(char *input, int isInputGst){
+int isCodeCorrect(char *input){
 	int result;
 	int i;
 	//Check 1st character if it is a digit. Quit if yes
@@ -418,44 +419,42 @@ int isCodeCorrect(char *input, int isInputGst){
 		}
 	}
 	//Checks if has 'G' or 'N' @ 2nd character, depending on isInputGst
-	if(input[1] != ((isInputGst)? 'G' : 'N') ){
-		printf("Second character of code is not \'%c\'. Try again.\n", (isInputGst)? 'G' : 'N' );
+	if(strchr("GN", input[1]) == NULL ){
+		printf("Second character of code is not \'G\' or \'N\'. Try again.\n");
 		return 0;
 	}
 	//Code now follows the standard. Return 1 now.
 	return 1;
 }
 
+//To be used for qsort
+int compareItems(const void* a, const void* b){
+	struct Item *item1 = (struct Item *)a;
+	struct Item *item2 = (struct Item *)b;
+	return strcmp(item1->code, item2->code);
+}
+
+void transferData(struct Item **target, struct Item *source){
+	*target = source;
+}
+
 //This function adds an item
-void addItem(struct ItemArray gst, struct ItemArray ngst){
+void addItem(struct ItemArray *gst, struct ItemArray *ngst){
 	char choice;
 	int isInputGst = 0;
 	struct Item input;
 	puts("This option allows user to add items");
-	//Request if item has GST or not. Keep requesting otherwise.
-	do{
-		printf("Does the item have GST?(Y/N) ");
-		scanf(" %c", &choice);
-		//Remove remaining input before continuing
-		while(getchar() != '\n');
-		if(strchr("YyNn", choice) == NULL){
-			printf("Incorrect input. Please enter again.\n\n");
-		}
-	}while(strchr("YyNn", choice) == NULL);
-	//Change isInputGst to 1 if Y or y. Don't change otherwise.
-	if(strchr("Yy", choice) != NULL)
-		isInputGst = 1;
 	//Request item's code. Keep requesting if wrong.
 	int codeInputSuccessful = 0;
 	do{		
-		char buffer[100];
+		char buffer[30];
 		printf("Enter the item's code in uppercase: ");
-		scanf(" %s", buffer);
+		scanf(" %[^\n]", buffer);
 		//Remove remaining input before continuing
 		while(getchar() != '\n');
 		if(strlen(buffer) == 5){
-			if(isCodeCorrect(buffer, isInputGst)){
-				strncpy(input.code, buffer, 5);
+			if(isCodeCorrect(buffer)){
+				strncpy(input.code, buffer, 6);
 				input.code[5] = '\0';
 				codeInputSuccessful = 1;
 			}
@@ -467,22 +466,24 @@ void addItem(struct ItemArray gst, struct ItemArray ngst){
 			printf("Code entered is not 5 characters long. Try again.\n\n");
 		}
 	}while(codeInputSuccessful == 0);
+	//Determine if item has GST based on code
+	isInputGst = (input.code[1] == 'G');
 	//Request item's name. Keep requesting if wrong.
 	int nameInputSuccessful = 0;
 	do{		
-		char buffer[50];
+		char buffer[31]; 
 		printf("Enter the item's name: ");
-		scanf(" %s", buffer);
+		scanf(" %[^\n]", buffer);
 		//Remove remaining input before continuing
 		while(getchar() != '\n');
-		if((strlen(buffer) <= 30) && (strlen(buffer) > 0)){
-			memset(&input.name[0], 0, sizeof(input.name));
-			strncpy(input.name, buffer, strlen(buffer));
-			input.name[30] = '\0';
+		int slength = strlen(buffer);
+		if((slength <= 30) && (slength > 0)){
+			strncpy(input.name, buffer, slength);
+			input.name[slength] = '\0';
 			nameInputSuccessful = 1;
 		}
 		else{ //Print error otherwise
-			printf("Code entered is not 1 to 50 characters long. Try again.\n\n");
+			printf("Name entered is not 1 to 30 characters long. Try again.\n\n");
 		}
 	}while(nameInputSuccessful == 0);
 	//Request item's price. Keep requesting if wrong.
@@ -513,40 +514,39 @@ void addItem(struct ItemArray gst, struct ItemArray ngst){
 			quantityInputSuccessful = 1;
 		}
 		else
-			printf("Item must have a price of more than 0.00. Try again.\n\n");	
+			printf("Item must have a quantity of more than 0. Try again.\n\n");	
 	}while(quantityInputSuccessful == 0);
 	//Items sold of new item is 0 by default.
 	input.itemsSold = 0;
+	//Allocate temporary array to create new allocation
+	int tempArraySize = (isInputGst? gst->size : ngst->size) + 1;
+	struct Item *temp = realloc(isInputGst? gst->array : ngst->array, 
+								tempArraySize * sizeof(struct Item));
 	//DO NOT continue operation if temp is null
 	//Means that there's not enough memory in system
 	//Prompt user to close other programs before continuing
-	//Branch into two options. Currently cannot be reduced.
-	if(isInputGst){
-		struct Item *temp = realloc(gst.array, (gst.size + 1) * sizeof(struct Item));
-		gst.array = temp;
-		//Use old arraySize since it now can help point to the last element
-		gst.array[gst.size] = input;
-		//Increment gst's size by 1 
-		gst.size++;
-		//Sort the input
-		//quickSort(gst.array, gst.size);
-		int i;
-		for(i = 0; i < gst.size; i++){
-			int remaining = gst.array[i].initialQuantity - gst.array[i].itemsSold;
-			printf("%s\t%-50s\t%8.2f\t%d\n",
-			gst.array[i].code, gst.array[i].name, gst.array[i].price, remaining
-			);
-		}
+	if(temp == NULL){
+		puts("Error: Not enough memory");
+		printf("Please close other programs before trying again.\n\n");
 	}
 	else{
-		struct Item *temp = realloc(ngst.array, (ngst.size + 1) * sizeof(struct Item));
-		ngst.array = temp;
-		//Use old arraySize since it now can help point to the last element
-		ngst.array[ngst.size] = input;
-		//Increment ngst's size by 1 
-		ngst.size += 1;
-		//Sort the array
-		//quickSort(ngst.array, ngst.size);
+		//Use old array's size since it now can help point to the last element
+		temp[tempArraySize - 1] = input;
+		//Sort the array using qsort
+		qsort(temp, tempArraySize, sizeof(struct Item), compareItems);
+		//Branch into two options, depending on if the item has GST
+		if(isInputGst){			
+			//repoint array pointer to temp
+			gst->array = temp;
+			//Increment gst's size by 1 
+			gst->size += 1;
+		}
+		else{
+			//repoint array pointer to temp
+			ngst->array = temp;
+			//Increment ngst's size by 1 
+			ngst->size += 1;
+		}
 	}
 }
 
@@ -561,12 +561,12 @@ void showInventory(struct ItemArray gst, struct ItemArray ngst){
 
 	//Print GST items
 	printf("GST items:\n\n");
-	printf("%s\t%-30s\t%-8s\t%-8s\n",
+	printf("%s\t%-30s\t%8s    %s\n",
 		"Code", "Name", "Price", "Quantity");
-	puts("-------------------------------------------------");
+	puts("-------------------------------------------------------------");
 	for(i = 0; i < gst.size; i++){
 		int remaining = gst.array[i].initialQuantity - gst.array[i].itemsSold;
-		printf("%s\t%-30s\t%8.2f\t%d\n",
+		printf("%s\t%-30s\t%8.2f    %8d\n",
 			gst.array[i].code, gst.array[i].name, gst.array[i].price, remaining
 			);
 	}
@@ -574,12 +574,12 @@ void showInventory(struct ItemArray gst, struct ItemArray ngst){
 
 	//Print Non-GST items
 	printf("Non-GST items:\n\n");
-	printf("%s\t%-30s\t%-8s\t%-8s\n",
+	printf("%s\t%-30s\t%8s    %s\n",
 		"Code", "Name", "Price", "Quantity");
-	puts("-------------------------------------------------");
+	puts("---------------------------------------------------------------");
 	for(i = 0; i < ngst.size; i++){
 		int remaining = ngst.array[i].initialQuantity - ngst.array[i].itemsSold;
-		printf("%s\t%-30s\t%8.2f\t%d\n",
+		printf("%s\t%-30s\t%8.2f    %8d\n",
 			ngst.array[i].code, ngst.array[i].name, ngst.array[i].price, remaining
 			);
 	}
