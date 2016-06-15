@@ -434,8 +434,27 @@ int compareItems(const void* a, const void* b){
 	return strcmp(item1->code, item2->code);
 }
 
-void transferData(struct Item **target, struct Item *source){
-	*target = source;
+//This function adds a new item to the selected file
+//It is not possible to append data without rewriting old data
+//As such, it simply rewrites from the  for
+void appendItemToFile(struct ItemArray source, char *fileName){
+	FILE *target = fopen(fileName, "w");
+	int i;
+	if(target != NULL){
+		for(i = 0; i < source.size; i++){
+			fprintf(target, "%s;%s;%.2f;%d",
+				source.array[i].code, source.array[i].name,
+				source.array[i].price, source.array[i].initialQuantity
+				);
+			if(i != source.size - 1){
+				fprintf(target, "\n");
+			}
+		}
+	}
+	else{
+		printf("Cannot open file %s. Please try again.\n\n", fileName);
+	}
+	fclose(target);
 }
 
 //This function adds an item
@@ -519,31 +538,34 @@ void addItem(struct ItemArray *gst, struct ItemArray *ngst){
 	//Items sold of new item is 0 by default.
 	input.itemsSold = 0;
 	//Allocate temporary array to create new allocation
-	int tempArraySize = (isInputGst? gst->size : ngst->size) + 1;
-	struct Item *temp = realloc(isInputGst? gst->array : ngst->array, 
-								tempArraySize * sizeof(struct Item));
+	struct ItemArray temp;
+	temp.size = (isInputGst? gst->size : ngst->size) + 1;
+	temp.array = realloc(isInputGst? gst->array : ngst->array, 
+						temp.size * sizeof(struct Item));
 	//DO NOT continue operation if temp is null
 	//Means that there's not enough memory in system
 	//Prompt user to close other programs before continuing
-	if(temp == NULL){
+	if(temp.array == NULL){
 		puts("Error: Not enough memory");
 		printf("Please close other programs before trying again.\n\n");
 	}
 	else{
 		//Use old array's size since it now can help point to the last element
-		temp[tempArraySize - 1] = input;
+		temp.array[temp.size - 1] = input;
 		//Sort the array using qsort
-		qsort(temp, tempArraySize, sizeof(struct Item), compareItems);
+		qsort(temp.array, temp.size, sizeof(struct Item), compareItems);
+		//Append item to gst.txt or ngst.txt, depending on if the item has GST
+		appendItemToFile(temp, isInputGst? "gst.txt" : "ngst.txt");
 		//Branch into two options, depending on if the item has GST
 		if(isInputGst){			
 			//repoint array pointer to temp
-			gst->array = temp;
+			gst->array = temp.array;
 			//Increment gst's size by 1 
 			gst->size += 1;
 		}
 		else{
 			//repoint array pointer to temp
-			ngst->array = temp;
+			ngst->array = temp.array;
 			//Increment ngst's size by 1 
 			ngst->size += 1;
 		}
@@ -652,36 +674,4 @@ struct ItemArray readFile(FILE *file){
 		result.array[i].itemsSold = 0; //No Item have been sold yet, so set each ItemSold to 0
 	}
 	return result;
-}
-
-//This function is used to sort the arrays in alphabetical order
-//This function uses quick sort to solve the problem
-void quickSort(struct Item *input, int size){
-    struct Item temp, middle;
-	int i, j;
-    if (size < 2)
-        return;
-	//Select the middle element for comparison
-	middle = input[size / 2];
-	//i is initialised at the start of the array
-	//j is initialised at the end of the array
-    for (i = 0, j = size - 1;; i++, j--) {
-		//Increment i until there's an element larger than the middle
-        while (strcmp(input[i].code, middle.code) < 0)
-            i++;
-		//Decrement j until there's an element smaller than the middle
-        while (strcmp(input[j].code, middle.code) > 0)
-            j--;
-		//Stop the loop if i and j pass each other
-        if (i >= j)
-            break;
-		//Perform exchange between elements i and j
-        temp = input[i];
-        input[i] = input[j];
-        input[j] = temp;
-    }
-	//Recursively do this for the first half
-    quickSort(input, i);
-	//Recursively do this for the second half
-    quickSort(input + i, size - i);
 }
