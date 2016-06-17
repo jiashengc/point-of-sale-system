@@ -492,15 +492,14 @@ void addItem(struct ItemArray *gst, struct ItemArray *ngst){
 				//This ItemArray does nothing but fill a parameter
 				struct ItemArray nothing = {0, NULL};
 				//Check if the code already exists
-				int itemExists = doesItemExist(*gst, *ngst, nothing, buffer);
-				if(itemExists == -1 ){
+				if(doesItemExist(*gst, *ngst, nothing, buffer) == -1 ){
 					//Perform copy operation
 					strncpy(input.code, buffer, 6);
 					input.code[5] = '\0';
 					codeInputSuccessful = 1;
 				}
 				else{
-					printf("This code already exists. Try again.%d\n\n", itemExists);
+					printf("This code already exists. Try again.\n\n");
 				}
 			}
 			else{
@@ -596,11 +595,12 @@ void addItem(struct ItemArray *gst, struct ItemArray *ngst){
 			ngst->size += 1;
 		}
 		//Entry is successfull. Print out entered item.
-		printf("The following item was successfully entered:\n");
+		printf("\nThe following item was successfully entered:\n");
 		printf("Item code: %s\n", input.code);
 		printf("Item name: %s\n", input.name);
 		printf("Price    : RM %.2f\n", input.price);
-		printf("Quantity : %d\n", input.quantity);
+		printf("Quantity : %d\n", input.initialQuantity);
+		sleep(2);
 	}
 }
 
