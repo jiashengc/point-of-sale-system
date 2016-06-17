@@ -22,7 +22,7 @@ void editItem(struct ItemArray gst, struct ItemArray ngst){
 
     // Checks if the user wants to exit or not
     if(strcmp(code, "-1") != 0 ) {
-      int itemCategory = doesItemExist(gst, ngst, code);
+      int itemCategory = doesItemExist(gst, ngst, list, code);
 
       // If item not found. Try again/
       if (itemCategory == -1) {
