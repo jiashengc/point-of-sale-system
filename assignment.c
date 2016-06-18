@@ -417,6 +417,7 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
   char code[6];
   int isInputGst = 0, codeInputSuccessful = 0;
   struct Item input;
+  struct Item list;
 
   puts("Please enter the item code.");
   do {
@@ -439,31 +440,77 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
           input.code[5] = '\0';
           codeInputSuccessful = 1;
         } else {
-          printf("Code does not exists. Try again.\n\n");
+          printf("Code does not exists. Try again.\n");
         }
       } else {
         printf("\n");
       }
     } else { // strlen(buffer) != 5
-      printf("Code entered is not 5 characters long. Try again.\n\n");
+      printf("Code entered is not 5 characters long. Try again.\n");
     }
 
   } while (codeInputSuccessful == 0); // Loop if code is faulty
 
-  isInputGst = (input.code[1] == 'G');
+  // The ItemArray does nothing but fill a parameter
+  struct ItemArray nothing = {0, NULL};
+  struct ItemArray selected;
+
+  int position;
+
+  isInputGst = doesItemExist(*gst, *ngst, nothing, input.code); // Output 1 if G or 0 if N
+  // Find the position of the item and choose the correct file, gst or ngst
+  if (isInputGst == 1) {
+    position = whereIsItem(*gst, input.code);
+    selected = *gst;
+  }
+  else if (isInputGst == 0) {
+    position = whereIsItem(*ngst, input.code);
+    selected = *ngst;
+  }
+  else {
+    printf("Error! There's something wrong with the code!");
+  }
 
   do {
-    printf("What would you like to change about %s?\n", input.code);
+    char buffer[300];
+    char name[30];
+    double price;
+    int quantity, fname;
+
+    printf("\nWhat would you like to change about %s?\n", input.code);
     puts("Enter -1 to exit");
     puts("------------------------------------");
-    puts("1: Name");
-    puts("2: Price");
-    puts("3: Quantity");
+    puts("1. Name");
+    puts("2. Price");
+    puts("3. Quantity");
     puts("------------------------------------");
-
+    printf("Choice: \n");
+    scanf("%s", choice);
     // The choices
     switch (choice) {
-      case '1': break;
+      case '1':
+        fname = 0;
+        printf("What is the new name:?\n");
+
+        do {
+          printf("Name: ");
+          scanf(" %[^\n]", buffer);
+
+          //Remove remaining input before continuing
+  		    dumpRemainingInput();
+          // Check if appropriate length of name
+          int slength = strlen(buffer);
+          if ((slength <= 30) && (slength > 0)){
+            fname = 1;
+            strncpy(selected.array[position].name, buffer, slength); // Replace name with new name
+          } else { //Print error otherwise
+            printf("Name entered is not 1 to 30 characters long. Try again.\n\n");
+          }
+        } while (fname == 0);
+
+        printf("%s's name has been changed to %s", input.code, buffer);
+        break;
+
       case '2': break;
       case '3': break;
     }
@@ -471,7 +518,6 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
   } while (choice != -1);
 
 }
-
 
 //This function checks if the code entered is correct
 //Returns 1 if correct, an error message and 0 if not
