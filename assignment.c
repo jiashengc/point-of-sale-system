@@ -475,9 +475,9 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
     char buffer[300];
     char name[30];
     double price;
-    int quantity, fname;
+    int quantity, fname = 0;
 
-    printf("\nWhat would you like to change about %s?\n", input.code);
+    printf("\nWhat would you like to change about %s, %s?\n", input.code, selected.array[position].name);
     puts("Enter -1 to exit");
     puts("------------------------------------");
     puts("1. Name");
@@ -485,12 +485,13 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
     puts("3. Quantity");
     puts("------------------------------------");
     printf("Choice: \n");
-    scanf("%s", choice);
+    scanf(" %c", &choice);
+
     // The choices
     switch (choice) {
       case '1':
         fname = 0;
-        printf("What is the new name:?\n");
+        printf("What is the new name?\n");
 
         do {
           printf("Name: ");
@@ -508,11 +509,18 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
           }
         } while (fname == 0);
 
-        printf("%s's name has been changed to %s", input.code, buffer);
+        printf("%s's name has been changed to %s.\n", input.code, buffer);
         break;
 
-      case '2': break;
-      case '3': break;
+      case '2':
+        break;
+
+      case '3':
+        break;
+
+      default:
+        printf("You've input the wrong option. Please try again.");
+        break;
     }
 
   } while (choice != -1);
