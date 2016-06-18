@@ -29,9 +29,9 @@ void clearScreen(){ system("clear");} //Clears screen(Only works on Linux/Unix)
 void dumpRemainingInput(){ while(getchar() != '\n'); }
 void printOptions();
 void purchaseItems(struct ItemArray gst, struct ItemArray ngst);
-void editItem(struct ItemArray gst, struct ItemArray ngst);
+void editItem(struct ItemArray *gst, struct ItemArray *ngst);
 void addItem(struct ItemArray *gst, struct ItemArray *ngst);
-void deleteItem(struct ItemArray gst, struct ItemArray ngst);
+void deleteItem(struct ItemArray *gst, struct ItemArray *ngst);
 void showInventory(struct ItemArray gst, struct ItemArray ngst);
 void dailyTransactions(struct ItemArray gst, struct ItemArray ngst);
 int countLines(FILE *file);
@@ -405,14 +405,17 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 	else{
 		printf("No items received. No receipt printed.\n");
 	}
-
+	
+	//Update the purchase.txt file
+	updateFile
+	
 	//Prompt user to enter to continue
 	printf("\n\nEnter to continue...  ");
 	dumpRemainingInput();
 }
 
 //This function edits an item
-void editItem(struct ItemArray gst, struct ItemArray ngst){
+void editItem(struct ItemArray *gst, struct ItemArray *ngst){
 	puts("This option allows user to edit items");
 }
 
@@ -605,7 +608,7 @@ void addItem(struct ItemArray *gst, struct ItemArray *ngst){
 }
 
 //This function deletes an item
-void deleteItem(struct ItemArray gst, struct ItemArray ngst){
+void deleteItem(struct ItemArray *gst, struct ItemArray *ngst){
 	puts("This option allows user to delete items");
 }
 
