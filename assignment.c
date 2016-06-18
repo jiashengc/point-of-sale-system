@@ -1,5 +1,5 @@
 /*-------------------------------------------------------------------*/
-/* ITS60304â€“ Assignment #1 */
+/* ITS60304–  Assignment #1 */
 /* C Programming */
 /* Student Name: <Chong Jia Sheng> <Kwan Juen Wen> */
 /* Student ID: <0326800> <0322448> */
