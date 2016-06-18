@@ -414,6 +414,7 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
 
   char choice;
+  char fileName[9];
   char code[6];
   int isInputGst = 0, codeInputSuccessful = 0;
   struct Item input;
@@ -440,7 +441,7 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
           input.code[5] = '\0';
           codeInputSuccessful = 1;
         } else {
-          printf("Code does not exists. Try again.\n");
+          printf("Item not found! Try again.\n");
         }
       } else {
         printf("\n");
@@ -462,10 +463,14 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
   if (isInputGst == 1) {
     position = whereIsItem(*gst, input.code);
     selected = *gst;
+    strncpy(fileName, "gst.txt", 9); // Replace name with new name
+    fileName[8] = '\0';
   }
   else if (isInputGst == 0) {
     position = whereIsItem(*ngst, input.code);
     selected = *ngst;
+    strncpy(fileName, "ngst.txt", 9); // Replace name with new name
+    fileName[8] = '\0';
   }
   else {
     printf("Error! There's something wrong with the code!");
@@ -478,44 +483,99 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
     int quantity, fname = 0;
 
     printf("\nWhat would you like to change about %s, %s?\n", input.code, selected.array[position].name);
-    puts("Enter -1 to exit");
     puts("------------------------------------");
     puts("1. Name");
     puts("2. Price");
     puts("3. Quantity");
     puts("------------------------------------");
-    printf("Choice: \n");
+    puts("4. Nothing! Exit!");
+    puts("");
+    printf("Choice: ");
     scanf(" %c", &choice);
 
     // The choices
     switch (choice) {
       case '1':
         fname = 0;
-        printf("What is the new name?\n");
+        printf("Current name: %s\n", selected.array[position].name);
+        puts("------------------------------------");
 
         do {
-          printf("Name: ");
+          printf("New name: ");
           scanf(" %[^\n]", buffer);
 
           //Remove remaining input before continuing
   		    dumpRemainingInput();
+
           // Check if appropriate length of name
           int slength = strlen(buffer);
           if ((slength <= 30) && (slength > 0)){
             fname = 1;
             strncpy(selected.array[position].name, buffer, slength); // Replace name with new name
-          } else { //Print error otherwise
+            selected.array[position].name[slength] = '\0';
+          } else { // Print error otherwise
             printf("Name entered is not 1 to 30 characters long. Try again.\n\n");
           }
         } while (fname == 0);
 
-        printf("%s's name has been changed to %s.\n", input.code, buffer);
+        printf("\nThe new name is %s.\n", buffer);
         break;
 
       case '2':
+        fname = 0;
+        printf("Current price: %.2f\n", selected.array[position].price);
+        puts("------------------------------------");
+
+        do {
+          printf("New price: ");
+          scanf(" %lf", &price);
+
+          //Remove remaining input before continuing
+          dumpRemainingInput();
+
+          // Check if appropriate price
+          if (price > 0.00) {
+            fname = 1;
+            selected.array[position].price = price;
+          } else { // Print error otherwise
+            printf("Price entered is not valid. Try again.\n\n");
+          }
+        } while (fname == 0);
+
+        printf("\nThe new price is %.2lf.\n", price);
         break;
 
       case '3':
+        fname = 0;
+        printf("Initial quantity: %d\n", selected.array[position].initialQuantity);
+        printf("Current quantity: %d\n", selected.array[position].initialQuantity - selected.array[position].itemsSold);
+        puts("------------------------------------");
+
+        do {
+          printf("New Initial quantity: ");
+          scanf(" %d", &quantity);
+
+          // Remove reamining input before continuing
+          dumpRemainingInput();
+
+          // Check if quantity is valid
+          if (quantity - selected.array[position].itemsSold < 0) {
+            printf("Your initial quantity can't be less than the quantity already sold! Try again.\n\n");
+          }
+          else if (quantity > 0) {
+            fname = 1;
+            selected.array[position].initialQuantity = quantity;
+          } else { // Print error otherwise
+            printf("Quantity entered is not valid. Try again.\n\n");
+          }
+        } while (fname == 0);
+
+        printf("\nThe new initial quantity is %d.\n", quantity);
+        printf("The new current quantity is %d.\n", selected.array[position].initialQuantity - selected.array[position].itemsSold);
+        break;
+
+      case '4':
+        printf("Exiting...\n\n");
         break;
 
       default:
@@ -523,9 +583,13 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
         break;
     }
 
-  } while (choice != -1);
+  } while (choice != '4');
+
+  // Replace the current file with new data
+  appendItemToFile(selected, fileName);
 
 }
+
 
 //This function checks if the code entered is correct
 //Returns 1 if correct, an error message and 0 if not
