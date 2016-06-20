@@ -1,4 +1,4 @@
-AN001;Asam;1.20;
+AN001;Asam;1.20;80
 BN001;Beef Bone;20.90;20
 CN001;Chicken Keel;8.00;11
 CN002;Chiili;10.00;46

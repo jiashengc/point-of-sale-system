@@ -5,15 +5,6 @@
 /* Student ID: <0326800> <0322448> */
 /*-------------------------------------------------------------------*/
 
-/*
-TODO: MASSIVE REFACTOR AHEAD
-List: (MUST BE DONE SEQUENTIALLY)
-	1) create ItemArray purchased within purchaseItems and dailyTransactions
-	2) refactor all functions to use purchased for purchased items
-	3) remove quantity from Item struct, don't need it after (2)
-	
-*/
- 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -304,6 +295,7 @@ void addToPurchased(struct ItemArray *purchased, struct ItemArray list){
 				temp[purchased->size] = list.array[i];
 				qsort(temp, purchased->size + 1, sizeof(struct Item), compareItems);
 				purchased->array = temp;
+				purchased->size += 1;
 			}
 			else{
 				puts("Error: Not enough memory");
@@ -320,11 +312,11 @@ void addToPurchased(struct ItemArray *purchased, struct ItemArray list){
 }
 
 //This function prints/updates the file purchase.txt
-void printPurchasedFile(struct ItemArray purchased){
+void savePurchasedFile(struct ItemArray purchased){
 	FILE *target = fopen("purchase.txt", "w");
-	int i, j;
+	int i;
 	if(target != NULL){
-		for(j = 0; j < purchased.size; j++){
+		for(i = 0; i < purchased.size; i++){
 			if(purchased.array[i].quantity > 0){
 				fprintf(target, "%s;%s;%.2f;%d",
 					purchased.array[i].code, purchased.array[i].name,
@@ -502,20 +494,34 @@ void purchaseItems(struct ItemArray gst, struct ItemArray ngst){
 		//Print the receipt
 		printReceiptOnScreen(list);
 		
-		//Now we add the bought items to purchased.txt
-		FILE *purchase_file;
-		purchase_file = fopen("purchase.txt", "r");
-		//If not NULL, add items to existing purchased items and write it back in
-		if(purchase_file != NULL){
-			struct ItemArray purchased = readFile(purchase_file);
-			fclose(purchase_file);
-			addToPurchased(&purchased, list);
-			printPurchasedFile(purchased);
+		//Check if purchase.txt exists. If yes, continue
+		if(access("purchase.txt", F_OK) != -1){
+			//Try to open the file
+			FILE *purchase_file = fopen("purchase.txt", "r");
+			//Read, merge and save.
+			if(purchase_file != NULL){
+				struct ItemArray purchased = readFile(purchase_file);
+				fclose(purchase_file);
+				addToPurchased(&purchased, list);
+				savePurchasedFile(purchased);
+			}
+			//In case of failure
+			else{
+				printf("Cannot open file purchase.txt.\nPlease try to resolve this issue.\n\n");
+				exit(EXIT_FAILURE);
+			}
+			//Update gst.txt and ngst.txt
+			updateFile(gst, "gst.txt");
+			updateFile(ngst, "ngst.txt");
 		}
-		//If NULL, then the file may not exist. If so, print the current list to purchase.txt
+		//If no, save the current list to purchase.txt
 		else{
 			qsort(list.array, list.size, sizeof(struct Item), compareItems);
-			printPurchasedFile(list);
+			savePurchasedFile(list);
+			
+			//Update gst.txt and ngst.txt
+			updateFile(gst, "gst.txt");
+			updateFile(ngst, "ngst.txt");
 		}
 	}
 	//Do not print receipt otherwise
@@ -593,8 +599,6 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
 		scanf(" %c", &choice);
 		dumpRemainingInput();
 		
-		clearScreen();
-		
 		int changeSuccessful = 0;
 		// The choices
 		switch (choice) {
@@ -651,8 +655,7 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
 				break;
 
 			case '3':
-				printf("Initial quantity: %d\n", selected.array[position].quantity);
-				printf("Current quantity: %d\n", selected.array[position].quantity - selected.array[position].quantity);
+				printf("Quantity: %d\n", selected.array[position].quantity);
 				puts("------------------------------------");
 
 				do {
@@ -664,7 +667,7 @@ void editItem(struct ItemArray *gst, struct ItemArray *ngst) {
 					dumpRemainingInput();
 
 					// Check if quantity is valid
-					if (quantity - selected.array[position].quantity < 0) {
+					if (quantity < 0) {
 						printf("Your initial quantity can't be less than the quantity already sold! Try again.\n\n");
 					}
 					else if(quantity > 0){
@@ -771,7 +774,7 @@ void addItem(struct ItemArray *gst, struct ItemArray *ngst){
 	int quantityInputSuccessful = 0;
 	do{
 		int quantityBuffer;
-		printf("Enter the item's initial quantity: ");
+		printf("Enter the item's quantity: ");
 		scanf(" %d", &quantityBuffer);
 		//Remove remaining input before continuing
 		dumpRemainingInput();
@@ -782,8 +785,6 @@ void addItem(struct ItemArray *gst, struct ItemArray *ngst){
 		else
 			printf("Item must have a quantity of more than 0. Try again.\n\n");
 	}while(quantityInputSuccessful == 0);
-	//Items sold of new item is 0 by default.
-	input.quantity = 0;
 	//Allocate temporary array to create new allocation
 	struct ItemArray temp;
 	temp.size = (isInputGst? gst->size : ngst->size) + 1;
@@ -839,7 +840,7 @@ void showInventory(struct ItemArray gst, struct ItemArray ngst){
 	printf("GST items:\n\n");
 	printf("%s\t%-30s\t%8s	  %s\n",
 		"Code", "Name", "Price", "Quantity");
-	puts("-------------------------------------------------------------");
+	puts("-------------------------------------------------------------------");
 	for(i = 0; i < gst.size; i++){
 		printf("%s\t%-30s\t%8.2f	%8d\n",
 			gst.array[i].code, gst.array[i].name, gst.array[i].price, gst.array[i].quantity
@@ -851,7 +852,7 @@ void showInventory(struct ItemArray gst, struct ItemArray ngst){
 	printf("Non-GST items:\n\n");
 	printf("%s\t%-30s\t%8s	  %s\n",
 		"Code", "Name", "Price", "Quantity");
-	puts("---------------------------------------------------------------");
+	puts("-------------------------------------------------------------------");
 	for(i = 0; i < ngst.size; i++){
 		printf("%s\t%-30s\t%8.2f	%8d\n",
 			ngst.array[i].code, ngst.array[i].name, ngst.array[i].price, ngst.array[i].quantity
@@ -896,6 +897,18 @@ void dailyTransactions(){
 			}
 		}
 		
+		printf("Purchased items:\n");
+		printf("%s\t%-30s\t%8s	  %s\n",
+			"Code", "Name", "Price", "Quantity");
+		puts("-------------------------------------------------------------------");
+		for(i = 0; i < purchased.size; i++){
+			printf("%s\t%-30s\t%8.2f	%8d\n",
+				purchased.array[i].code, purchased.array[i].name, 
+				purchased.array[i].price, purchased.array[i].quantity
+				);
+		}
+		printf("\n\n");
+	
 		//Print out results to console
 		printf("Total transaction\t: %d\n", totalItemSold);
 		printf("Sales with GST\t\t: RM %.2f\n", gstTotal);
@@ -914,6 +927,7 @@ void dailyTransactions(){
 
 int countLines(FILE *file){
 	//Starts from the first line, so start from 1
+	
 	int result = 1;
 	while(!feof(file)){
 		char c = fgetc(file);

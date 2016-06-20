@@ -1,0 +1,2 @@
+AG001;July biscuits;5.35;10
+AN001;Asam;1.20;10
