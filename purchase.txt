@@ -1,2 +1,3 @@
 AG001;July biscuits;5.35;10
 AN001;Asam;1.20;10
+CG003;Queenz Cakes;14.00;5
