@@ -1,3 +1,5 @@
-AG001;July biscuits;5.35;10
-AN001;Asam;1.20;10
+AG001;July biscuits;5.35;15
+AN001;Asam;1.20;15
 CG003;Queenz Cakes;14.00;5
+EG001;Huge Gulp;6.50;10
+GN001;Green Tea;12.00;6

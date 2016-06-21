@@ -1,6 +1,6 @@
-AG001;July biscuits;5.35;80
+AG001;July biscuits;5.35;75
 AG002;Sweet biscuits;6.50;60
-BG001;Maximu Bun;3.50;20
+BG001;Maximus Bun;4.00;25
 BG002;Lamli Burger;4.60;15
 CG001;TTT Candy;4.00;42
 CG002;Cappuccino;7.80;30
