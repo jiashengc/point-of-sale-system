@@ -82,7 +82,7 @@ int main(){
 				case '4':	deleteItem(&gst, &ngst);		break;
 				case '5':	showInventory(gst, ngst);		break;
 				case '6':	dailyTransactions();			break;
-				case '7':	printf("\n\nGoodbye.");	sleep(1);	break;
+				case '7':	printf("\nGoodbye.\n");	sleep(1);	break;
 				default:
 					printf("\nInvalid option entered. Please try again.\n");
 					break;
